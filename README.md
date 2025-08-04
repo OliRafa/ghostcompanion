@@ -24,7 +24,7 @@
 <h3 align="center">GhostCompanion</h3>
 
   <p align="center">
-    Transfer transactions numerous sources to <a href="https://github.com/ghostfolio/ghostfolio" target="_blank">Ghostfolio</a>.
+    Transfer transactions from numerous sources to <a href="https://github.com/ghostfolio/ghostfolio" target="_blank">Ghostfolio</a>.
     Currently implemented for <a href="https://coinbase.com" target="_blank">Coinbase</a> and <a href="https://tastytrade.com" target="_blank">Tastytrade</a>.
     <br />
     <br />
