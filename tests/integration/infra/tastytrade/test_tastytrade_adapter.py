@@ -6,7 +6,6 @@ from tastytrade.account import Transaction
 
 from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
 from tastytrade_ghostfolio.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
-from tests.conftest import mark_test
 from tests.infra.tastytrade_api import InMemoryTastytradeApi
 
 
@@ -17,35 +16,30 @@ class TastytradeAdapterFactory:
 
 
 class TestTotalFee(TastytradeAdapterFactory):
-    @mark_test
     def should_return_a_positive_number(self):
         result = TastytradeAdapter._calculate_total_fee(
             Decimal("-0.001"), Decimal("-0.4"), Decimal("-0.03"), Decimal("0.0")
         )
         assert result == Decimal("0.431")
 
-    @mark_test
     def should_aggregate_fees(self):
         result = TastytradeAdapter._calculate_total_fee(
             Decimal("-0.001"), Decimal("0.0"), Decimal("0.0"), Decimal("0.0")
         )
         assert result > Decimal("0.0")
 
-    @mark_test
     def when_any_fee_isnt_given_should_assume_zero(self):
         result = TastytradeAdapter._calculate_total_fee(None, None, None, None)
         assert result == Decimal("0.0")
 
 
 class TestGetTrades(TastytradeAdapterFactory):
-    @mark_test
     def when_given_asset_should_return_trades_for_requested_asset_only(self):
         results = self.tastytrade_adapter.get_trades("STOCKA")
 
         assert len(results) == 1
         assert results[0].symbol == "STOCKA"
 
-    @mark_test
     def when_no_asset_is_given_should_return_all_trades(self):
         results = self.tastytrade_adapter.get_trades()
 
@@ -56,13 +50,11 @@ class TestGetTrades(TastytradeAdapterFactory):
 
 
 class TestGetAssets(TastytradeAdapterFactory):
-    @mark_test
     def should_return_all_assets(self):
         results = self.tastytrade_adapter.get_assets()
 
         assert len(results) == 3
 
-    @mark_test
     def when_theres_aditional_history_entries_should_return_only_existing_assets(self):
         self.tastytrade_adapter._history.append(
             Transaction(
@@ -83,7 +75,6 @@ class TestGetAssets(TastytradeAdapterFactory):
 
         assert all(asset is not None for asset in results)
 
-    @mark_test
     def when_after_symbol_change_theres_no_new_trade_should_add_dividends(self):
         self.tastytrade_adapter = TastytradeAdapter(InMemoryTastytradeApi())
         self.tastytrade_adapter._history.append(
@@ -110,7 +101,6 @@ class TestGetAssets(TastytradeAdapterFactory):
 
 
 class TestGetSymbolChanges(TastytradeAdapterFactory):
-    @mark_test
     def should_return_all_symbol_changes(self):
         results = self.tastytrade_adapter.get_symbol_changes()
 
@@ -120,7 +110,6 @@ class TestGetSymbolChanges(TastytradeAdapterFactory):
 
 
 class TestGetSplits(TastytradeAdapterFactory):
-    @mark_test
     def should_return_all_forward_splits(self):
         results = self.tastytrade_adapter.get_splits()
 
@@ -131,7 +120,6 @@ class TestGetSplits(TastytradeAdapterFactory):
 
 
 class TestGetDividends(TastytradeAdapterFactory):
-    @mark_test
     def should_return_dividend_reinvestments(self):
         results = self.tastytrade_adapter.get_dividends("STOCKA")
 
@@ -140,7 +128,6 @@ class TestGetDividends(TastytradeAdapterFactory):
             for transaction in results
         )
 
-    @mark_test
     def when_dividend_is_taxed_should_return_trade_as_fee(self):
         results = self.tastytrade_adapter.get_dividends("STOCKA")
 
@@ -153,7 +140,6 @@ class TestGetDividends(TastytradeAdapterFactory):
 
         assert tax.fee > Decimal("0.0")
 
-    @mark_test
     def should_return_received_dividends(self):
         results = self.tastytrade_adapter.get_dividends("STOCKA")
 

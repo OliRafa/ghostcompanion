@@ -5,8 +5,7 @@ import yaml
 from tastytrade_ghostfolio.core.entity.symbol_change import SymbolChange
 
 
-class SymbolMappingsNotFoundException(Exception):
-    ...
+class SymbolMappingsNotFoundException(Exception): ...
 
 
 class SymbolMappingRepository:
@@ -18,7 +17,7 @@ class SymbolMappingRepository:
         with file_path.open("r") as buffer:
             return yaml.safe_load(buffer.read())
 
-    def get_symbol_mappings(self) -> SymbolChange:
+    def get_symbol_mappings(self) -> list[SymbolChange]:
         try:
             mappings = self._load_mapping_file(self.mapping_file_path)
             changes = []

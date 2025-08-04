@@ -1,3 +1,4 @@
+from tastytrade_ghostfolio.core.entity.account import GhostfolioAccount
 from tastytrade_ghostfolio.core.entity.asset import Asset
 from tastytrade_ghostfolio.core.entity.dividend_info import DividendInfo
 from tastytrade_ghostfolio.core.entity.split import Split
@@ -7,7 +8,8 @@ from tastytrade_ghostfolio.core.exceptions import AssetNotFoundException
 
 
 class Portfolio:
-    def __init__(self):
+    def __init__(self, account: GhostfolioAccount):
+        self.account = account
         self._assets: list[Asset] = []
 
     def add_asset(self, symbol: str, trades: list[Trade]):
@@ -17,15 +19,24 @@ class Portfolio:
 
     def adapt_symbol_changes(self, changes: list[SymbolChange]):
         for change in changes:
-            old_asset = self.get_asset(change.old_symbol)
-            try:
-                new_asset = self.get_asset(change.new_symbol)
-                old_asset.change_symbol(change.new_symbol)
-                new_asset.add_trades(old_asset.trades)
-                self._assets.remove(old_asset)
+            if self.has_asset(change.old_symbol):
+                old_asset = self.get_asset(change.old_symbol)
 
-            except AssetNotFoundException:
-                old_asset.change_symbol(change.new_symbol)
+                try:
+                    new_asset = self.get_asset(change.new_symbol)
+                    old_asset.change_symbol(change.new_symbol)
+                    new_asset.add_trades(old_asset.trades)
+                    self._assets.remove(old_asset)
+
+                except AssetNotFoundException:
+                    old_asset.change_symbol(change.new_symbol)
+
+    def has_asset(self, symbol: str) -> bool:
+        for asset in self._assets:
+            if asset.symbol == symbol:
+                return True
+
+        return False
 
     def get_asset(self, symbol: str) -> Asset:
         try:
