@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.0.0](https://github.com/OliRafa/ghostcompanion/compare/v1.5.2...v2.0.0) (2025-08-04)
+
+
+### Code Refactoring
+
+* rename project to ghostcompanion ([51f139a](https://github.com/OliRafa/ghostcompanion/commit/51f139aaa756e9f6234c88ba267a9c2649e23740))
+
+
+### BREAKING CHANGES
+
+* close #15.
+
 ## [1.5.2](https://github.com/OliRafa/tastytrade-ghostfolio/compare/v1.5.1...v1.5.2) (2025-05-09)
 
 
