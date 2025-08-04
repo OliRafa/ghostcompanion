@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 
-from tastytrade_ghostfolio.core.entity.symbol_change import SymbolChange
+from ghostcompanion.core.entity.symbol_change import SymbolChange
 
 
 class SymbolMappingsNotFoundException(Exception): ...

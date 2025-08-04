@@ -1,9 +1,9 @@
 from pytest import fixture
 
-from tastytrade_ghostfolio.core.entity.account import GhostfolioAccount
-from tastytrade_ghostfolio.core.entity.portfolio import Portfolio
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from ghostcompanion.core.entity.account import GhostfolioAccount
+from ghostcompanion.core.entity.portfolio import Portfolio
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 from tests.infra.ghostfolio_api import InMemoryGhostfolioApi
 
 

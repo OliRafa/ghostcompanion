@@ -1,6 +1,6 @@
 from typing import Any
 
-from tastytrade_ghostfolio.core.ports.coinbase import CoinbasePort
+from ghostcompanion.core.ports.coinbase import CoinbasePort
 from tests.resources.coinbase.accounts import ACCOUNTS
 from tests.resources.coinbase.transactions import TRANSACTIONS
 

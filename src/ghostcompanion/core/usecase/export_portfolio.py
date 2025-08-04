@@ -1,5 +1,5 @@
-from tastytrade_ghostfolio.core.entity.portfolio import Portfolio
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from ghostcompanion.core.entity.portfolio import Portfolio
+from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 
 
 class ExportPortfolio:

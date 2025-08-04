@@ -21,17 +21,18 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-<h3 align="center">Tastytrade-Ghostfolio</h3>
+<h3 align="center">GhostCompanion</h3>
 
   <p align="center">
-    Transfer <a href="https://tastytrade.com" target="_blank">Tastytrade</a> transactions to <a href="https://github.com/ghostfolio/ghostfolio" target="_blank">Ghostfolio</a>.
+    Transfer transactions numerous sources to <a href="https://github.com/ghostfolio/ghostfolio" target="_blank">Ghostfolio</a>.
+    Currently implemented for <a href="https://coinbase.com" target="_blank">Coinbase</a> and <a href="https://tastytrade.com" target="_blank">Tastytrade</a>.
     <br />
     <br />
     <p align="center">
       <a href="#getting-started">Getting Started</a> •
       <a href="#credits">Credits</a> •
-      <a href="https://github.com/OliRafa/tastytrade-ghostfolio/issues/new?labels=bug&template=bug-report---.md">Report Bug</a> •
-      <a href="https://github.com/OliRafa/tastytrade-ghostfolio/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a> •
+      <a href="https://github.com/OliRafa/ghostcompanion/issues/new?labels=bug&template=bug-report---.md">Report Bug</a> •
+      <a href="https://github.com/OliRafa/ghostcompanion/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a> •
       <a href="#roadmap">Roadmap</a>
     </p>
   </p>
@@ -63,15 +64,15 @@
 <!-- GETTING STARTED -->
 ## Getting Started
 
-Tastytrade-Ghostfolio plugin works best when doing account management all by itself.
+GhostCompanion plugin works best when doing account management all by itself.
 In other words, manually creating activities in your Ghostfolio account is not only not needed, but it's also discouraged.
 That's because some operations (like symbol change, or stock splits) need to understand the complete picture of the account, and change its state
 totally.
 
-It'll start by getting (or creatting) a `Tastytrade` account from Ghostfolio, and from that it'll start adding trading transactions and/or dividends.
+It'll start by getting (or creating) accounts for each source (`Coinbase` or `Tastytrade`) from Ghostfolio, and from that it'll start adding trading transactions and/or dividends.
 
 This plugin runs completely in the background, and is provided as container images hosted on
-<a href="https://hub.docker.com/r/olirafa/tastytrade-ghostfolio" target="_blank">Docker Hub</a> for `linux/amd64`.
+<a href="https://hub.docker.com/r/olirafa/ghostcompanion" target="_blank">Docker Hub</a> for `linux/amd64`.
 
 
 
@@ -81,6 +82,8 @@ Start by setting up the appropriate environment variables, listed below:
 
 | Name                       | Type                | Default Value         | Description                                                                                                                                                             |
 | -------------------------- | ------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `COINBASE_API_KEY_ID`      | `string`            |                       | The _Coinbase_ API Key.                                                                                                                                         |
+| `COINBASE_SECRET`          | `string`            |                       | The _Coinbase_ Secret. It must be generated according to the <a href="https://docs.cdp.coinbase.com/coinbase-app/authentication-authorization/api-key-authentication#creating-api-keys" target="_blank">Coinbase API official documentation</a>.|
 | `GHOSTFOLIO_ACCOUNT_TOKEN` | `string`            |                       | The _Ghostfolio_ Account Token.                                                                                                                                         |
 | `GHOSTFOLIO_BASE_URL`      | `string` (optional) | "https://ghostfol.io" | The _Ghostfolio_ URL. If you're self hosting you should change it for your particular instance URL, otherwise all data will be exported to _Ghostfolio_ cloud offering. |
 | `TASTYTRADE_USERNAME`      | `string`            |                       | The _Tastytrade_ username.                                                                                                                                              |
@@ -92,7 +95,7 @@ Start by setting up the appropriate environment variables, listed below:
 For evaluation, you can run it by:
 
 ```sh
-$ docker run --rm --name tastytrade-ghostfolio -e GHOSTFOLIO_ACCOUNT_TOKEN=<account_token> -e TASTYTRADE_USERNAME=myuser -e TASTYTRADE_PASSWORD=super_secure olirafa/tastytrade-ghostfolio
+$ docker run --rm --name ghostcompanion -e GHOSTFOLIO_ACCOUNT_TOKEN=<account_token> -e TASTYTRADE_USERNAME=myuser -e TASTYTRADE_PASSWORD=super_secure olirafa/ghostcompanion
 ```
 
 It'll spawn the container, ingest all data from Tastytrade, export it all to Ghostfolio, and then remove the container at the end.
@@ -105,20 +108,20 @@ For that, two approaches are presented, deploying using <a href="#docker-compose
 
 The plugin was developed without a scheduler (like Cron) by design, so another tool is needed for that.
 We suggest using <a href="https://github.com/mcuadros/ofelia" target="_blank">Ofelia</a>, and that's what we have in the provided
-<a href="https://github.com/OliRafa/tastytrade-ghostfolio/blob/main/docker-compose.yml" target="_blank">Docker Compose file</a>.
+<a href="https://github.com/OliRafa/ghostcompanion/blob/main/docker-compose.yml" target="_blank">Docker Compose file</a>.
 
 First, clone the repo:
 ```sh
-$ git clone https://github.com/OliRafa/tastytrade-ghostfolio.git
+$ git clone https://github.com/OliRafa/ghostcompanion.git
 ```
 
 Enter the repo folder:
 ```sh
-$ cd tastytrade-ghostfolio
+$ cd ghostcompanion
 ```
 
 Then, you'll need a `.env` file with the <a href="#environment-variables">environment variables</a> set.
-A example file can be found <a href="https://github.com/OliRafa/tastytrade-ghostfolio/blob/main/.env.example" target="_blank">here</a>.
+A example file can be found <a href="https://github.com/OliRafa/ghostcompanion/blob/main/.env.example" target="_blank">here</a>.
 
 With everything ready, run the following command:
 ```sh
@@ -141,7 +144,7 @@ For an example of such CronJob deployment, take a look below:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: tastytrade-ghostfolio
+  name: ghostcompanion
   namespace: ghostfolio
 spec:
   schedule: "@hourly"
@@ -150,19 +153,19 @@ spec:
       template:
         spec:
           containers:
-            - name: tastytrade-ghostfolio
-              image: olirafa/tastytrade-ghostfolio
+            - name: ghostcompanion
+              image: olirafa/ghostcompanion
               imagePullPolicy: IfNotPresent
               env:
                 - name: GHOSTFOLIO_ACCOUNT_TOKEN
                   valueFrom:
                     configMapKeyRef:
-                      name: tastytrade-ghostfolio-configs
+                      name: ghostcompanion-configs
                       key: GHOSTFOLIO_ACCOUNT_TOKEN
                 - name: GHOSTFOLIO_BASE_URL
                   valueFrom:
                     configMapKeyRef:
-                      name: tastytrade-ghostfolio-configs
+                      name: ghostcompanion-configs
                       key: GHOSTFOLIO_BASE_URL
                 - name: TASTYTRADE_USERNAME
                   valueFrom:
@@ -183,13 +186,14 @@ spec:
 <!-- ROADMAP -->
 ## Roadmap
 
-- [x] Stock buys and sells
+- [x] Stock/Crypto buys and sells
 - [x] Forward share splits
 - [x] Symbol changes
 - [x] Dividends and dividend reinvestments
+- [x] Crypto transaction fees
 - [ ] Account balance
 
-See the [open issues](https://github.com/OliRafa/tastytrade-ghostfolio/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/OliRafa/ghostcompanion/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -213,8 +217,8 @@ Don't forget to give the project a star! Thanks again!
 
 ### Top contributors:
 
-<a href="https://github.com/OliRafa/tastytrade-ghostfolio/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=OliRafa/tastytrade-ghostfolio" alt="contrib.rocks image" />
+<a href="https://github.com/OliRafa/ghostcompanion/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=OliRafa/ghostcompanion" alt="contrib.rocks image" />
 </a>
 
 
@@ -236,7 +240,7 @@ Don't forget to give the project a star! Thanks again!
 ## License
 
 Distributed under the Unlicense License.
-See <a href="https://github.com/OliRafa/tastytrade-ghostfolio/blob/main/LICENSE" target="_blank">`LICENSE.txt`</a> for more information.
+See <a href="https://github.com/OliRafa/ghostcompanion/blob/main/LICENSE" target="_blank">`LICENSE.txt`</a> for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

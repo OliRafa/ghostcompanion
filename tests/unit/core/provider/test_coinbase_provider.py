@@ -3,8 +3,8 @@ from decimal import Decimal
 
 from pytest import fixture
 
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.core.provider.coinbase import CoinbaseProvider
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from tests.infra.coinbase_api import InMemoryCoinbaseApi
 
 

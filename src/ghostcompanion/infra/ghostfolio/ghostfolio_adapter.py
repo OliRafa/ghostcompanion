@@ -1,11 +1,11 @@
 from decimal import Decimal
 from typing import Any
 
-from tastytrade_ghostfolio.core.entity.account import GhostfolioAccount
-from tastytrade_ghostfolio.core.entity.portfolio import Portfolio
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_api import GhostfolioApi
+from ghostcompanion.core.entity.account import GhostfolioAccount
+from ghostcompanion.core.entity.portfolio import Portfolio
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.infra.ghostfolio.ghostfolio_api import GhostfolioApi
 
 
 class GhostfolioAdapter:

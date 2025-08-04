@@ -1,24 +1,24 @@
-from tastytrade_ghostfolio.configs.settings import Settings
-from tastytrade_ghostfolio.core.provider.coinbase import CoinbaseProvider
-from tastytrade_ghostfolio.core.usecase.export_portfolio import ExportPortfolio
-from tastytrade_ghostfolio.core.usecase.import_coinbase_transactions import (
+from ghostcompanion.configs.settings import Settings
+from ghostcompanion.core.provider.coinbase import CoinbaseProvider
+from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
+from ghostcompanion.core.usecase.import_coinbase_transactions import (
     ImportCoinbaseTransactions,
 )
-from tastytrade_ghostfolio.core.usecase.import_tastytrade_transactions import (
+from ghostcompanion.core.usecase.import_tastytrade_transactions import (
     ImportTastytradeTransactions,
 )
-from tastytrade_ghostfolio.infra.coinbase.coinbase_api import CoinbaseApi
-from tastytrade_ghostfolio.infra.dividends_provider.dividends_provider_adapter import (
+from ghostcompanion.infra.coinbase.coinbase_api import CoinbaseApi
+from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
-from tastytrade_ghostfolio.infra.dividends_provider.yahoo_finance_api import (
+from ghostcompanion.infra.dividends_provider.yahoo_finance_api import (
     YahooFinanceApi,
 )
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_api import GhostfolioApi
-from tastytrade_ghostfolio.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
-from tastytrade_ghostfolio.infra.tastytrade.tastytrade_api import TastytradeApi
-from tastytrade_ghostfolio.repositories.symbol_mapping import SymbolMappingRepository
+from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from ghostcompanion.infra.ghostfolio.ghostfolio_api import GhostfolioApi
+from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
+from ghostcompanion.infra.tastytrade.tastytrade_api import TastytradeApi
+from ghostcompanion.repositories.symbol_mapping import SymbolMappingRepository
 
 
 def _should_run_coinbase_importer() -> bool:
