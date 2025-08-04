@@ -4,12 +4,12 @@ from decimal import Decimal
 import pytest
 from pytest import fixture
 
-from tastytrade_ghostfolio.core.entity.asset import Asset
-from tastytrade_ghostfolio.core.entity.dividend_info import DividendInfo
-from tastytrade_ghostfolio.core.entity.split import Split
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.core.exceptions import TradeNotFoundException
+from ghostcompanion.core.entity.asset import Asset
+from ghostcompanion.core.entity.dividend_info import DividendInfo
+from ghostcompanion.core.entity.split import Split
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.exceptions import TradeNotFoundException
 
 
 class AssetFactory:

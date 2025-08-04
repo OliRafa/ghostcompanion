@@ -1,8 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
 
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.entity.transaction_type import TransactionType
 
 
 class TestTrade:

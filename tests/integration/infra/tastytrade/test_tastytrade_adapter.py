@@ -4,8 +4,8 @@ from decimal import Decimal
 from pytest import fixture
 from tastytrade.account import Transaction
 
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
 from tests.infra.tastytrade_api import InMemoryTastytradeApi
 
 

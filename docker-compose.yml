@@ -5,17 +5,17 @@ services:
     image: mcuadros/ofelia:latest
     container_name: scheduler
     depends_on:
-      - tastytrade-ghostfolio
+      - ghostcompanion
     command: daemon --docker
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
-      ofelia.job-run.tastytrade-ghostfolio.schedule: "@weekly"
-      ofelia.job-run.tastytrade-ghostfolio.container: "tastytrade-ghostfolio"
+      ofelia.job-run.ghostcompanion.schedule: "@weekly"
+      ofelia.job-run.ghostcompanion.container: "ghostcompanion"
 
-  tastytrade-ghostfolio:
+  ghostcompanion:
     build: .
-    container_name: tastytrade-ghostfolio
+    container_name: ghostcompanion
     restart: on-failure
     env_file:
       .env

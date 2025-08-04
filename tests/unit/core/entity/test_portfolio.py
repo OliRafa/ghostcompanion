@@ -4,13 +4,13 @@ from decimal import Decimal
 import pytest
 from pytest import fixture
 
-from tastytrade_ghostfolio.core.entity.asset import Asset
-from tastytrade_ghostfolio.core.entity.portfolio import Portfolio
-from tastytrade_ghostfolio.core.entity.symbol_change import SymbolChange
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.core.exceptions import AssetNotFoundException
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from ghostcompanion.core.entity.asset import Asset
+from ghostcompanion.core.entity.portfolio import Portfolio
+from ghostcompanion.core.entity.symbol_change import SymbolChange
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.exceptions import AssetNotFoundException
+from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 from tests.infra.ghostfolio_api import InMemoryGhostfolioApi
 
 

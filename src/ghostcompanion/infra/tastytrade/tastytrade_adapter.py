@@ -4,13 +4,13 @@ from typing import Iterable
 
 from tastytrade.account import Transaction
 
-from tastytrade_ghostfolio.core.entity.split import Split
-from tastytrade_ghostfolio.core.entity.symbol_change import SymbolChange
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.core.exceptions import TransactionTypeNotFoundException
-from tastytrade_ghostfolio.core.ports.tastytrade import TastytradePort
-from tastytrade_ghostfolio.infra.tastytrade.tastytrade_api import TastytradeApi
+from ghostcompanion.core.entity.split import Split
+from ghostcompanion.core.entity.symbol_change import SymbolChange
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.exceptions import TransactionTypeNotFoundException
+from ghostcompanion.core.ports.tastytrade import TastytradePort
+from ghostcompanion.infra.tastytrade.tastytrade_api import TastytradeApi
 
 
 class TastytradeAdapter(TastytradePort):

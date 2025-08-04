@@ -1,7 +1,7 @@
 from tastytrade import Account, Session
 from tastytrade.account import Transaction
 
-from tastytrade_ghostfolio.configs.settings import Settings
+from ghostcompanion.configs.settings import Settings
 
 
 class TastytradeApi:

@@ -41,7 +41,7 @@ jobs:
         uses: docker/metadata-action@v4
         if: steps.semantic-releases.outputs.new_release_published == 'true'
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/tastytrade-ghostfolio
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/ghostcompanion
           tags: |
             type=semver,pattern={{version}},value=${{ steps.semantic-releases.outputs.new_release_version }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.semantic-releases.outputs.new_release_version }}

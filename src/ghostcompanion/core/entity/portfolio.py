@@ -1,10 +1,10 @@
-from tastytrade_ghostfolio.core.entity.account import GhostfolioAccount
-from tastytrade_ghostfolio.core.entity.asset import Asset
-from tastytrade_ghostfolio.core.entity.dividend_info import DividendInfo
-from tastytrade_ghostfolio.core.entity.split import Split
-from tastytrade_ghostfolio.core.entity.symbol_change import SymbolChange
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.exceptions import AssetNotFoundException
+from ghostcompanion.core.entity.account import GhostfolioAccount
+from ghostcompanion.core.entity.asset import Asset
+from ghostcompanion.core.entity.dividend_info import DividendInfo
+from ghostcompanion.core.entity.split import Split
+from ghostcompanion.core.entity.symbol_change import SymbolChange
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.exceptions import AssetNotFoundException
 
 
 class Portfolio:

@@ -6,8 +6,8 @@ import jwt
 import requests
 from cryptography.hazmat.primitives import serialization
 
-from tastytrade_ghostfolio.configs.settings import CoinbaseSettings
-from tastytrade_ghostfolio.core.ports.coinbase import CoinbasePort
+from ghostcompanion.configs.settings import CoinbaseSettings
+from ghostcompanion.core.ports.coinbase import CoinbasePort
 
 
 class CoinbaseApi(CoinbasePort):

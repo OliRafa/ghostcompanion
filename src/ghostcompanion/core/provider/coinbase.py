@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Iterable
 
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.core.ports.coinbase import CoinbasePort
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.ports.coinbase import CoinbasePort
 
 
 class CoinbaseProvider:

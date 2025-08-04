@@ -3,13 +3,13 @@ from decimal import Decimal
 
 from pytest import fixture
 
-from tastytrade_ghostfolio.core.entity.dividend_info import DividendInfo
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.infra.dividends_provider.dividends_provider_adapter import (
+from ghostcompanion.core.entity.dividend_info import DividendInfo
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
-from tastytrade_ghostfolio.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
+from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
 from tests.infra.tastytrade_api import InMemoryTastytradeApi
 from tests.infra.yahoo_finance_api import InMemoryYahooFinanceApi
 

@@ -4,7 +4,7 @@ from typing import Optional, Self
 
 from pydantic import BaseModel, Field, computed_field
 
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.entity.transaction_type import TransactionType
 
 
 class Trade(BaseModel):

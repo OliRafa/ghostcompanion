@@ -1,10 +1,10 @@
-from tastytrade_ghostfolio.core.entity.portfolio import Portfolio
-from tastytrade_ghostfolio.infra.dividends_provider.dividends_provider_adapter import (
+from ghostcompanion.core.entity.portfolio import Portfolio
+from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
-from tastytrade_ghostfolio.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
-from tastytrade_ghostfolio.repositories.symbol_mapping import (
+from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
+from ghostcompanion.repositories.symbol_mapping import (
     SymbolMappingRepository,
     SymbolMappingsNotFoundException,
 )

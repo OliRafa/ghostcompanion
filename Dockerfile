@@ -55,7 +55,6 @@ COPY --from=builder-base $VIRTUAL_ENV $VIRTUAL_ENV
 
 WORKDIR /app
 
-# COPY poetry.lock pyproject.toml ./
-COPY src/tastytrade_ghostfolio/ tastytrade_ghostfolio/
+COPY src/ghostcompanion/ ghostcompanion/
 
-CMD ["python", "tastytrade_ghostfolio/main.py"]
+CMD ["python", "ghostcompanion/main.py"]

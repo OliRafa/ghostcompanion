@@ -2,9 +2,9 @@ import datetime
 from decimal import Decimal
 from typing import Optional
 
-from tastytrade_ghostfolio.core.entity.dividend_info import DividendInfo
-from tastytrade_ghostfolio.core.ports.dividends_provider import DividendsProviderPort
-from tastytrade_ghostfolio.infra.dividends_provider.yahoo_finance_api import (
+from ghostcompanion.core.entity.dividend_info import DividendInfo
+from ghostcompanion.core.ports.dividends_provider import DividendsProviderPort
+from ghostcompanion.infra.dividends_provider.yahoo_finance_api import (
     YahooFinanceApi,
 )
 

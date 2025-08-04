@@ -2,9 +2,9 @@
 profile = "black"
 
 [tool.poetry]
-name = "tastytrade-ghostfolio"
+name = "ghostcompanion"
 version = "0.1.0"
-description = "Transfer Tastytrade transactions to Ghostfolio"
+description = "Transfer transactions to Ghostfolio from numerous sources."
 authors = ["Rafael Oliveira <olirafa@proton.me>"]
 license = "The Unlicense"
 readme = "README.md"

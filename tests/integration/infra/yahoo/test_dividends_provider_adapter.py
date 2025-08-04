@@ -2,8 +2,8 @@ import datetime
 
 from pytest import fixture
 
-from tastytrade_ghostfolio.core.entity.dividend_info import DividendInfo
-from tastytrade_ghostfolio.infra.dividends_provider.dividends_provider_adapter import (
+from ghostcompanion.core.entity.dividend_info import DividendInfo
+from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
 from tests.infra.yahoo_finance_api import InMemoryYahooFinanceApi

@@ -1,9 +1,9 @@
-from tastytrade_ghostfolio.core.entity.portfolio import Portfolio
-from tastytrade_ghostfolio.core.entity.symbol_change import SymbolChange
-from tastytrade_ghostfolio.core.entity.trade import Trade
-from tastytrade_ghostfolio.core.provider.coinbase import CoinbaseProvider
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
-from tastytrade_ghostfolio.repositories.symbol_mapping import (
+from ghostcompanion.core.entity.portfolio import Portfolio
+from ghostcompanion.core.entity.symbol_change import SymbolChange
+from ghostcompanion.core.entity.trade import Trade
+from ghostcompanion.core.provider.coinbase import CoinbaseProvider
+from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from ghostcompanion.repositories.symbol_mapping import (
     SymbolMappingRepository,
     SymbolMappingsNotFoundException,
 )

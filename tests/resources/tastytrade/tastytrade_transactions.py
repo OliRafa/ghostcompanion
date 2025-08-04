@@ -1,7 +1,8 @@
 import datetime
 from decimal import Decimal
 
-from tastytrade.account import InstrumentType, Transaction
+from tastytrade.account import Transaction
+from tastytrade.order import InstrumentType
 
 trade_buys = [
     Transaction(

@@ -2,7 +2,7 @@ from typing import Any
 
 import requests
 
-from tastytrade_ghostfolio.configs.settings import GhostfolioSettings
+from ghostcompanion.configs.settings import GhostfolioSettings
 
 
 class GhostfolioApi:

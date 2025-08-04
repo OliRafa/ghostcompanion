@@ -1,12 +1,12 @@
 from pytest import fixture
 
-from tastytrade_ghostfolio.core.entity.symbol_change import SymbolChange
-from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
-from tastytrade_ghostfolio.core.provider.coinbase import CoinbaseProvider
-from tastytrade_ghostfolio.core.usecase.import_coinbase_transactions import (
+from ghostcompanion.core.entity.symbol_change import SymbolChange
+from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.provider.coinbase import CoinbaseProvider
+from ghostcompanion.core.usecase.import_coinbase_transactions import (
     ImportCoinbaseTransactions,
 )
-from tastytrade_ghostfolio.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 from tests.infra.coinbase_api import InMemoryCoinbaseApi
 from tests.infra.ghostfolio_api import InMemoryGhostfolioApi
 from tests.infra.symbol_mapping_repository import InMemorySymbolMappingRepository
