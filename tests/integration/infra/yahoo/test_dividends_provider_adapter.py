@@ -6,7 +6,6 @@ from tastytrade_ghostfolio.core.entity.dividend_info import DividendInfo
 from tastytrade_ghostfolio.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
-from tests.conftest import mark_test
 from tests.infra.yahoo_finance_api import InMemoryYahooFinanceApi
 
 
@@ -17,7 +16,6 @@ class DividendsProviderAdapterFactory:
 
 
 class TestGetBySymbol(DividendsProviderAdapterFactory):
-    @mark_test
     def when_given_bound_dates_should_return_data_within_bounds(self):
         start_date = datetime.date(2020, 5, 28)
         end_date = datetime.date(2023, 9, 6)
@@ -30,7 +28,6 @@ class TestGetBySymbol(DividendsProviderAdapterFactory):
         assert max(result.ex_dividend_date for result in results) <= end_date
         assert len(results) == 15
 
-    @mark_test
     def when_symbol_isnt_found_should_return_empty_list(self):
         start_date = datetime.date(2020, 5, 28)
         end_date = datetime.date(2023, 9, 6)
@@ -41,7 +38,6 @@ class TestGetBySymbol(DividendsProviderAdapterFactory):
 
         assert results == []
 
-    @mark_test
     def when_no_dates_are_given_should_return_all_data(self):
         results: list[DividendInfo] = self.dividends_provider.get_by_symbol("STOCKA")
 

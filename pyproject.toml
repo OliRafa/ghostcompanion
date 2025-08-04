@@ -16,6 +16,8 @@ python-dotenv = "^1.0.0"
 pyyaml = "^6.0.2"
 tastytrade = "^9.7"
 yfinance = "^0.2.52"
+pyjwt = "2.8.0"
+cryptography = "42.0.5"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.11.0"
@@ -23,6 +25,7 @@ isort = "^5.12.0"
 pylama = "^8.4.1"
 commitizen = "^3.12.0"
 pytest = "^8.3.4"
+setuptools = "^80.9.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -32,3 +35,4 @@ build-backend = "poetry.core.masonry.api"
 addopts = "-vv"
 testpaths = ["tests"]
 pythonpath = ["."]
+python_functions = "should_* when_*"

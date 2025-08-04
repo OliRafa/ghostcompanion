@@ -58,7 +58,9 @@ class InMemoryGhostfolioApi:
         return self._accounts
 
     def create_account(self, account_data: dict[str, Any]) -> dict[str, Any]:
-        return {"id": str(uuid4())}
+        account_data["id"] = str(uuid4())
+        self._accounts.append(account_data)
+        return account_data
 
     def delete_order_by_id(self, order_id: str):
         order = next(filter(lambda x: x["id"] == order_id, self._orders))

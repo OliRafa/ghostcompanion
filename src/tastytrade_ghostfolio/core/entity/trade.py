@@ -8,16 +8,20 @@ from tastytrade_ghostfolio.core.entity.transaction_type import TransactionType
 
 
 class Trade(BaseModel):
+    currency: Optional[str] = Field("USD")
     description: Optional[str] = Field(None)
+    data_source: str = Field("YAHOO", alias="dataSource")
     executed_at: datetime
     fee: Decimal
     id: Optional[str] = Field(None)
     inner_quantity: Optional[Decimal] = Field(
         None, alias="quantity", exclude=True, repr=False
     )
+    inner_unit_price: Optional[Decimal] = Field(
+        None, alias="unit_price", exclude=True, repr=False
+    )
     symbol: str
     transaction_type: TransactionType
-    unit_price: Decimal
     value: Optional[Decimal] = Field(None)
 
     def change_symbol(self, value: str):
@@ -34,6 +38,18 @@ class Trade(BaseModel):
     @quantity.setter
     def quantity(self, value: Decimal):
         self.inner_quantity = value
+
+    @computed_field
+    @property
+    def unit_price(self) -> Decimal:
+        if self.inner_unit_price is None:
+            return round(self.value / self.quantity, 14)
+
+        return self.inner_unit_price
+
+    @unit_price.setter
+    def unit_price(self, value: Decimal):
+        self.inner_unit_price = value
 
     def __eq__(self, other: datetime | Self) -> bool:
         """To implement 'in' operator"""

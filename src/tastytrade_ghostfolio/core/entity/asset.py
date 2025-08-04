@@ -1,6 +1,5 @@
 from datetime import datetime
 from decimal import Decimal
-from itertools import batched
 
 from tastytrade_ghostfolio.core.entity.dividend_info import DividendInfo
 from tastytrade_ghostfolio.core.entity.split import Split
