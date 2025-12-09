@@ -78,7 +78,7 @@ This plugin runs completely in the background, and is provided as container imag
 
 ### Environment Variables
 
-Start by setting up the appropriate environment variables, listed below:
+Start by setting up the appropriate environment variables, listed below.
 
 | Name                       | Type                | Default Value         | Description                                                                                                                                                             |
 | -------------------------- | ------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -86,16 +86,18 @@ Start by setting up the appropriate environment variables, listed below:
 | `COINBASE_SECRET`          | `string`            |                       | The _Coinbase_ Secret. It must be generated according to the <a href="https://docs.cdp.coinbase.com/coinbase-app/authentication-authorization/api-key-authentication#creating-api-keys" target="_blank">Coinbase API official documentation</a>.|
 | `GHOSTFOLIO_ACCOUNT_TOKEN` | `string`            |                       | The _Ghostfolio_ Account Token.                                                                                                                                         |
 | `GHOSTFOLIO_BASE_URL`      | `string` (optional) | "https://ghostfol.io" | The _Ghostfolio_ URL. If you're self hosting you should change it for your particular instance URL, otherwise all data will be exported to _Ghostfolio_ cloud offering. |
-| `TASTYTRADE_USERNAME`      | `string`            |                       | The _Tastytrade_ username.                                                                                                                                              |
-| `TASTYTRADE_PASSWORD`      | `string`            |                       | The _Tastytrade_ password.                                                                                                                                              |
+| `TASTYTRADE_CLIENT_SECRET`      | `string`            |                       | The _Tastytrade_ Client Secret.                                                                                                                                              |
+| `TASTYTRADE_REFRESH_TOKEN` | `string`            |                       | The _Tastytrade_ Refresh Token.                                                                                                                                              |
 
+
+For how to generate the TastyTrade variables, please refer to [this documentation](https://tastyworks-api.readthedocs.io/en/latest/sessions.html).
 
 ### Docker
 
 For evaluation, you can run it by:
 
 ```sh
-$ docker run --rm --name ghostcompanion -e GHOSTFOLIO_ACCOUNT_TOKEN=<account_token> -e TASTYTRADE_USERNAME=myuser -e TASTYTRADE_PASSWORD=super_secure olirafa/ghostcompanion
+$ docker run --rm --name ghostcompanion -e GHOSTFOLIO_ACCOUNT_TOKEN=<account_token> -e TASTYTRADE_CLIENT_SECRET=my_client_secret -e TASTYTRADE_REFRESH_TOKEN=super_secure_token olirafa/ghostcompanion
 ```
 
 It'll spawn the container, ingest all data from Tastytrade, export it all to Ghostfolio, and then remove the container at the end.
@@ -167,16 +169,16 @@ spec:
                     configMapKeyRef:
                       name: ghostcompanion-configs
                       key: GHOSTFOLIO_BASE_URL
-                - name: TASTYTRADE_USERNAME
+                - name: TASTYTRADE_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
                       name: tastytrade-credentials
-                      key: user
-                - name: TASTYTRADE_PASSWORD
+                      key: client_secret
+                - name: TASTYTRADE_REFRESH_TOKEN 
                   valueFrom:
                     secretKeyRef:
                       name: tastytrade-credentials
-                      key: password
+                      key: refresh_token
           restartPolicy: OnFailure
 ```
 

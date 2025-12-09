@@ -6,18 +6,18 @@ load_dotenv(find_dotenv())
 
 
 class CoinbaseSettings:
-    API_KEY = getenv("COINBASE_API_KEY_ID")
-    SECRET = getenv("COINBASE_SECRET")
+    API_KEY: str = getenv("COINBASE_API_KEY_ID", "")
+    SECRET: str = getenv("COINBASE_SECRET", "")
 
 
 class GhostfolioSettings:
-    BASE_URL = f"{getenv('GHOSTFOLIO_BASE_URL')}/api/v1"
-    ACCOUNT_TOKEN = getenv("GHOSTFOLIO_ACCOUNT_TOKEN")
+    BASE_URL: str = f"{getenv('GHOSTFOLIO_BASE_URL', 'https://ghostfol.io')}/api/v1"
+    ACCOUNT_TOKEN: str = getenv("GHOSTFOLIO_ACCOUNT_TOKEN", "")
 
 
 class TastytradeSettings:
-    USERNAME = getenv("TASTYTRADE_USERNAME")
-    PASSWORD = getenv("TASTYTRADE_PASSWORD")
+    CLIENT_SECRET: str = getenv("TASTYTRADE_CLIENT_SECRET", "")
+    REFRESH_TOKEN: str = getenv("TASTYTRADE_REFRESH_TOKEN", "")
 
 
 class Settings(GhostfolioSettings, TastytradeSettings):

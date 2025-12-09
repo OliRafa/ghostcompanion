@@ -29,7 +29,7 @@ def _should_run_coinbase_importer() -> bool:
 
 
 def _should_run_tastytrade_importer() -> bool:
-    if Settings.Tastytrade.USERNAME and Settings.Tastytrade.PASSWORD:
+    if Settings.Tastytrade.CLIENT_SECRET and Settings.Tastytrade.REFRESH_TOKEN:
         return True
 
     return False
