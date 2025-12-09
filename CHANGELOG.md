@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1](https://github.com/OliRafa/ghostcompanion/compare/v2.0.0...v2.0.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* **account:** managed message stating old library name ([f746d56](https://github.com/OliRafa/ghostcompanion/commit/f746d566aade46534e90752c2c8809eed818fb11))
+* **tastytrade:** not being able to login due to login method deprecation ([f695e79](https://github.com/OliRafa/ghostcompanion/commit/f695e790140d764fdd6402d118d0730175910c13))
+
 # [2.0.0](https://github.com/OliRafa/ghostcompanion/compare/v1.5.2...v2.0.0) (2025-08-04)
 
 
