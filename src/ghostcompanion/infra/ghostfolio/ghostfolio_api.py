@@ -1,11 +1,13 @@
-from typing import Any
+from typing import Any, final
 
 import requests
 
 from ghostcompanion.configs.settings import GhostfolioSettings
+from ghostcompanion.core.ports.ghostfolio import GhostfolioPort
 
 
-class GhostfolioApi:
+@final
+class GhostfolioApi(GhostfolioPort):
     def __init__(self):
         self.AUTHORIZATION_HEADER = self._get_ghostfolio_authorization_header()
 

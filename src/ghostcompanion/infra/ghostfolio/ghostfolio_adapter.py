@@ -1,15 +1,16 @@
 from decimal import Decimal
-from typing import Any
+from typing import Any, final
 
 from ghostcompanion.core.entity.account import GhostfolioAccount
 from ghostcompanion.core.entity.portfolio import Portfolio
 from ghostcompanion.core.entity.trade import Trade
 from ghostcompanion.core.entity.transaction_type import TransactionType
-from ghostcompanion.infra.ghostfolio.ghostfolio_api import GhostfolioApi
+from ghostcompanion.core.ports.ghostfolio import GhostfolioPort
 
 
+@final
 class GhostfolioAdapter:
-    def __init__(self, ghostfolio_api: GhostfolioApi):
+    def __init__(self, ghostfolio_api: GhostfolioPort):
         self.ghostfolio_api = ghostfolio_api
         self._orders: list[dict[str, Any]] = []
 

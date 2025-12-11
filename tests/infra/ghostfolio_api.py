@@ -1,10 +1,13 @@
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, final
 from uuid import uuid4
 
+from ghostcompanion.core.ports.ghostfolio import GhostfolioPort
 
-class InMemoryGhostfolioApi:
+
+@final
+class InMemoryGhostfolioApi(GhostfolioPort):
     def __init__(self):
         self._accounts = [
             {

@@ -1,3 +1,5 @@
+from typing import final
+
 from ghostcompanion.core.entity.portfolio import Portfolio
 from ghostcompanion.core.entity.symbol_change import SymbolChange
 from ghostcompanion.core.entity.trade import Trade
@@ -9,6 +11,7 @@ from ghostcompanion.repositories.symbol_mapping import (
 )
 
 
+@final
 class ImportCoinbaseTransactions:
     def __init__(
         self,
