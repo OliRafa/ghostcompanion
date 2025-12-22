@@ -1,8 +1,12 @@
 from ghostcompanion.configs.settings import Settings
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
+from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
 from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
 from ghostcompanion.core.usecase.import_coinbase_transactions import (
     ImportCoinbaseTransactions,
+)
+from ghostcompanion.core.usecase.import_interactive_brokers_transactions import (
+    ImportInteractiveBrokersTransactions,
 )
 from ghostcompanion.core.usecase.import_tastytrade_transactions import (
     ImportTastytradeTransactions,
@@ -16,6 +20,9 @@ from ghostcompanion.infra.dividends_provider.yahoo_finance_api import (
 )
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 from ghostcompanion.infra.ghostfolio.ghostfolio_api import GhostfolioApi
+from ghostcompanion.infra.interactive_brokers.interactive_brokers_api import (
+    InteractiveBrokersApi,
+)
 from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
 from ghostcompanion.infra.tastytrade.tastytrade_api import TastytradeApi
 from ghostcompanion.repositories.symbol_mapping import SymbolMappingRepository
@@ -30,6 +37,13 @@ def _should_run_coinbase_importer() -> bool:
 
 def _should_run_tastytrade_importer() -> bool:
     if Settings.Tastytrade.CLIENT_SECRET and Settings.Tastytrade.REFRESH_TOKEN:
+        return True
+
+    return False
+
+
+def _should_run_interactive_brokers_importer() -> bool:
+    if Settings.InteractiveBrokers.QUERY and Settings.InteractiveBrokers.TOKEN:
         return True
 
     return False
@@ -57,6 +71,16 @@ if __name__ == "__main__":
         )
 
         portfolio = import_tastytrade_transactions.execute()
+        export_portfolio.execute(portfolio)
+
+    if _should_run_interactive_brokers_importer():
+        interactive_brokers = InteractiveBrokersProvider(InteractiveBrokersApi())
+        dividends_provider = DividendsProviderAdapter(YahooFinanceApi())
+        import_interactive_brokers_transactions = ImportInteractiveBrokersTransactions(
+            interactive_brokers, ghostfolio, symbol_mapping_repository
+        )
+
+        portfolio = import_interactive_brokers_transactions.execute()
         export_portfolio.execute(portfolio)
 
     print("Done!")

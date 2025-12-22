@@ -15,6 +15,11 @@ class GhostfolioSettings:
     ACCOUNT_TOKEN: str = getenv("GHOSTFOLIO_ACCOUNT_TOKEN", "")
 
 
+class InteractiveBrokersSettings:
+    QUERY: str = getenv("IBKR_QUERY", "")
+    TOKEN: str = getenv("IBKR_TOKEN", "")
+
+
 class TastytradeSettings:
     CLIENT_SECRET: str = getenv("TASTYTRADE_CLIENT_SECRET", "")
     REFRESH_TOKEN: str = getenv("TASTYTRADE_REFRESH_TOKEN", "")
@@ -23,4 +28,5 @@ class TastytradeSettings:
 class Settings(GhostfolioSettings, TastytradeSettings):
     Coinbase = CoinbaseSettings
     Ghostfolio = GhostfolioSettings
+    InteractiveBrokers = InteractiveBrokersSettings
     Tastytrade = TastytradeSettings

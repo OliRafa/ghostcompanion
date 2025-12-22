@@ -675,6 +675,25 @@ socks = ["socksio (==1.*)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
+name = "ibflex"
+version = "0.16"
+description = "('Parse Interactive Brokers Flex XML reports and convert to Python types',)"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = []
+develop = false
+
+[package.extras]
+web = ["requests"]
+
+[package.source]
+type = "git"
+url = "https://github.com/agusalex/ibflex"
+reference = "HEAD"
+resolved_reference = "5db6e0499b793a9675dca5e78792157b428c8fad"
+
+[[package]]
 name = "idna"
 version = "3.11"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -1949,4 +1968,4 @@ repair = ["scipy (>=1.6.3)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "6ca8ea84a91904f819a8ae7c64e08c71cda4fa74b18a9769a7bc12c842cd4083"
+content-hash = "917046a449175266fb9934517ff5ccbbf4cdb119864eef7222623dd731eef246"
