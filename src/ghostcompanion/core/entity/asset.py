@@ -119,3 +119,6 @@ class Asset:
         self.symbol = symbol
         for trade in self._trades:
             trade.symbol = symbol
+
+    def get_oldest_trade(self) -> Trade:
+        return self.trades[0]

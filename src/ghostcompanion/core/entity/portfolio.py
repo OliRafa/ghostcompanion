@@ -1,3 +1,6 @@
+from collections.abc import Iterable
+from typing import final
+
 from ghostcompanion.core.entity.account import GhostfolioAccount
 from ghostcompanion.core.entity.asset import Asset
 from ghostcompanion.core.entity.dividend_info import DividendInfo
@@ -7,6 +10,7 @@ from ghostcompanion.core.entity.trade import Trade
 from ghostcompanion.core.exceptions import AssetNotFoundException
 
 
+@final
 class Portfolio:
     def __init__(self, account: GhostfolioAccount):
         self.account = account
@@ -57,7 +61,7 @@ class Portfolio:
         asset: Asset = self.get_asset(asset)
         return asset.trades
 
-    def get_absent_trades(self, asset: str, trades: list[Trade]) -> list[Trade]:
+    def get_absent_trades(self, asset: str, trades: Iterable[Trade]) -> list[Trade]:
         try:
             asset: Asset = self.get_asset(asset)
             return [trade for trade in trades if not asset.has_trade(trade)]
@@ -65,7 +69,7 @@ class Portfolio:
         except StopIteration:
             raise AssetNotFoundException()
 
-    def delete_repeated_trades(self, asset: str, trades: list[Trade]):
+    def delete_repeated_trades(self, asset: str, trades: Iterable[Trade]):
         asset: Asset = self.get_asset(asset)
         for trade in trades:
             asset.delete_trade(trade)
@@ -82,3 +86,11 @@ class Portfolio:
     def get_dividends(self, asset: str) -> list[Trade]:
         asset: Asset = self.get_asset(asset)
         return asset.dividends
+
+    def get_oldest_trade(self, asset: str) -> Trade:
+        try:
+            asset: Asset = self.get_asset(asset)
+            return asset.get_oldest_trade()
+
+        except StopIteration:
+            raise AssetNotFoundException()
