@@ -1,0 +1,13 @@
+{
+       "version": "0.2.0",
+       "configurations": [
+              {
+                     "name": "Run Ghostfolio",
+                     "type": "python",
+                     "request": "launch",
+                     "program": "${workspaceFolder}/src/ghostcompanion/main.py",
+                     "console": "integratedTerminal",
+                     "justMyCode": true
+              }
+       ]
+}
