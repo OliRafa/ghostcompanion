@@ -2,12 +2,12 @@ from os import getenv
 
 from dotenv import find_dotenv, load_dotenv
 
-load_dotenv(find_dotenv())
+_ = load_dotenv(find_dotenv())
 
 
 class CoinbaseSettings:
     API_KEY: str = getenv("COINBASE_API_KEY_ID", "")
-    SECRET: str = getenv("COINBASE_SECRET", "")
+    SECRET: str = getenv("COINBASE_SECRET", "").replace("\\n", "\n")
 
 
 class GhostfolioSettings:
