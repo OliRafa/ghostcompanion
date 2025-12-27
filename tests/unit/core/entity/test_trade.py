@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from ghostcompanion.core.entity.trade import Trade
@@ -105,3 +105,129 @@ class TestEquals:
         )
 
         assert trade_a == trade_b
+
+    def should_take_fee_into_consideration(self):
+        trade_a = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234000"),
+            value=Decimal("1.4"),
+        )
+
+        trade_b = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234"),
+            value=Decimal("1.4"),
+        )
+
+        assert trade_a != trade_b
+
+    def should_take_execution_date_into_consideration(self):
+        trade_a = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234000"),
+            value=Decimal("1.4"),
+        )
+
+        trade_b = Trade(
+            executed_at=datetime.now() - timedelta(days=1),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234"),
+            value=Decimal("1.4"),
+        )
+
+        assert trade_a != trade_b
+
+    def should_not_take_execution_time_into_consideration(self):
+        trade_a = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234000"),
+            value=Decimal("1.4"),
+        )
+
+        trade_b = Trade(
+            executed_at=datetime.now() - timedelta(minutes=1),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234"),
+            value=Decimal("1.4"),
+        )
+
+        assert trade_a == trade_b
+
+    def should_take_quantity_into_consideration(self):
+        trade_a = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234000"),
+            quantity=Decimal("1.01"),
+        )
+
+        trade_b = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234"),
+            quantity=Decimal("1.02"),
+        )
+
+        assert trade_a != trade_b
+
+    def should_take_unity_price_into_consideration(self):
+        trade_a = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234"),
+            quantity=Decimal("1.01"),
+        )
+
+        trade_b = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.233"),
+            quantity=Decimal("1.01"),
+        )
+
+        assert trade_a != trade_b
+
+    def should_take_symbol_into_consideration(self):
+        trade_a = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234"),
+            quantity=Decimal("1.02"),
+        )
+
+        trade_b = Trade(
+            executed_at=datetime.now(),
+            fee=Decimal("0.21"),
+            symbol="TEST1",
+            transaction_type=TransactionType.DIVIDEND,
+            unit_price=Decimal("0.234"),
+            quantity=Decimal("1.02"),
+        )
+
+        assert trade_a != trade_b

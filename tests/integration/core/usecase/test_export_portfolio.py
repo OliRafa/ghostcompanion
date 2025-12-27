@@ -1,5 +1,6 @@
 from copy import deepcopy
 from datetime import timedelta
+from decimal import Decimal
 
 from pytest import fixture
 
@@ -72,3 +73,24 @@ class TestExportPortfolio(ExportPortfolioFactory):
             portfolio.account.id, "STOCKA"
         )
         assert all(order.description == "older_trade" for order in orders)
+
+    def when_ghostfolio_has_trade_and_api_has_not_should_delete_it_from_ghostfolio(
+        self,
+    ):
+        legacy_portfolio = self.import_interactive_brokers_transactions.execute()
+        legacy_portfolio = deepcopy(legacy_portfolio)
+        trades = legacy_portfolio.get_trades("STOCKA")
+        another_trade = deepcopy(trades[0])
+        another_trade.fee = Decimal("5")
+        another_trade.description = "should_be_deleted"
+        trades.append(another_trade)
+
+        self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
+
+        portfolio = self.import_interactive_brokers_transactions.execute()
+        self.export_portfolio.execute(portfolio)
+
+        orders = self.ghostfolio_adapter.get_orders_by_symbol(
+            portfolio.account.id, "STOCKA"
+        )
+        assert all(order.description != "should_be_deleted" for order in orders)
