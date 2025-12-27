@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, final
+from typing import Any, final, override
 from uuid import uuid4
 
 from ghostcompanion.core.ports.ghostfolio import GhostfolioPort
@@ -47,32 +47,37 @@ class InMemoryGhostfolioApi(GhostfolioPort):
         ]
         self._orders = self._load_orders()
 
-    def get_orders(self, account_id: str | None = None) -> dict:
+    @override
+    def get_orders(self, account_id: str | None = None) -> dict[str, Any]:
         return list(filter(lambda x: x["Account"]["id"] == account_id, self._orders))
 
-    def _load_orders(self) -> list[dict]:
+    def _load_orders(self) -> list[dict[str, Any]]:
         orders_file = (
             Path(__file__).parents[1].joinpath("resources", "ghostfolio", "orders.json")
         )
         with orders_file.open("r") as buffer:
             return json.load(buffer)
 
+    @override
     def get_accounts(self) -> list[dict[str, Any]]:
         return self._accounts
 
+    @override
     def create_account(self, account_data: dict[str, Any]) -> dict[str, Any]:
         account_data["id"] = str(uuid4())
         self._accounts.append(account_data)
         return account_data
 
+    @override
     def delete_order_by_id(self, order_id: str):
         order = next(filter(lambda x: x["id"] == order_id, self._orders))
         self._orders.remove(order)
 
+    @override
     def insert_orders(self, orders: list[dict[str, str | float]]):
         for order in orders:
             order["id"] = str(uuid4())
-            order["comment"] = ""
+            order["comment"] = order["comment"] or ""
             order["Account"] = {"id": order["accountId"]}
             del order["accountId"]
 

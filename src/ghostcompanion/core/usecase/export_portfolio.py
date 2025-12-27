@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from typing import final
 
 from ghostcompanion.core.entity.portfolio import Portfolio
@@ -40,9 +39,11 @@ class ExportPortfolio:
     @staticmethod
     def _filter_ghostfolio_orders_older_than_oldest_asset_trade(
         portfolio: Portfolio, symbol: str, orders: list[Trade]
-    ) -> Iterable[Trade]:
+    ) -> list[Trade]:
         oldest_trade = portfolio.get_oldest_trade(symbol)
-        return filter(
-            lambda x: x.executed_at.date() >= oldest_trade.executed_at.date(),
-            orders,
+        return list(
+            filter(
+                lambda x: x.executed_at.date() >= oldest_trade.executed_at.date(),
+                orders,
+            )
         )

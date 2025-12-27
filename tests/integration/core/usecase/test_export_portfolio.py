@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import timedelta
 
 from pytest import fixture
@@ -41,7 +42,7 @@ class TestExportPortfolio(ExportPortfolioFactory):
         legacy_portfolio = self.import_interactive_brokers_transactions.execute()
         trades = legacy_portfolio.get_trades("STOCKA")
         for trade in trades:
-            trade.executed_at - timedelta(days=365)
+            trade.executed_at = trade.executed_at - timedelta(days=365)
 
         self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
 
@@ -52,3 +53,22 @@ class TestExportPortfolio(ExportPortfolioFactory):
             portfolio.account.id, "STOCKA"
         )
         assert len(orders) == 2
+        assert any(order.executed_at.year == 2024 for order in orders)
+        assert any(order.executed_at.year == 2025 for order in orders)
+
+    def when_order_already_exists_in_ghostfolio_should_not_insert_it_again(self):
+        legacy_portfolio = self.import_interactive_brokers_transactions.execute()
+        legacy_portfolio = deepcopy(legacy_portfolio)
+        trades = legacy_portfolio.get_trades("STOCKA")
+        for trade in trades:
+            trade.description = "older_trade"
+
+        self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
+
+        portfolio = self.import_interactive_brokers_transactions.execute()
+        self.export_portfolio.execute(portfolio)
+
+        orders = self.ghostfolio_adapter.get_orders_by_symbol(
+            portfolio.account.id, "STOCKA"
+        )
+        assert all(order.description == "older_trade" for order in orders)

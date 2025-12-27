@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import final
 
 import yaml
 
@@ -8,6 +9,7 @@ from ghostcompanion.core.entity.symbol_change import SymbolChange
 class SymbolMappingsNotFoundException(Exception): ...
 
 
+@final
 class SymbolMappingRepository:
     def __init__(self):
         self.mapping_file_path = Path.cwd().joinpath("symbol_mapping.yaml")
