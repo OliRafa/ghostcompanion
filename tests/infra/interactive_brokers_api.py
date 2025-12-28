@@ -8,8 +8,8 @@ from tests.resources.interactive_brokers import TRADES
 
 @final
 class InMemoryInteractiveBrokersApi(InteractiveBrokersPort):
-    def __init__(self) -> None:
-        self.__trades = TRADES
+    def __init__(self, trades: list[Trade] = TRADES) -> None:
+        self.__trades = trades
 
     @override
     def get_symbols(self) -> list[str]:

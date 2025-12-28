@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -11,8 +9,8 @@ class GhostfolioAccount(BaseModel):
     balance_in_base_currency: float = Field(
         0.0, alias="balanceInBaseCurrency", exclude=True
     )
-    comment: Optional[str] = "Managed by GhostCompanion."
-    currency: Optional[str] = Field("USD")
-    id: Optional[str] = Field(None, exclude=True)
+    comment: str | None = "Managed by GhostCompanion."
+    currency: str | None = "USD"
+    id: str = Field(default="", exclude=True)
     name: str
-    platform_id: Optional[str] = Field(None, alias="platformId")
+    platform_id: str | None = Field(default=None, alias="platformId")

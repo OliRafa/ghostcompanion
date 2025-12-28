@@ -3,6 +3,7 @@ from pytest import fixture
 from ghostcompanion.core.entity.transaction_type import TransactionType
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
 from tests.infra.interactive_brokers_api import InMemoryInteractiveBrokersApi
+from tests.resources.interactive_brokers import CANCEL_TRADES
 
 
 class TastytradeAdapterFactory:
@@ -35,6 +36,21 @@ class TestGetTrades(TastytradeAdapterFactory):
             or trade.transaction_type == TransactionType.SELL
             for trade in trades
         )
+
+    def when_theres_cancel_trade_followed_by_completed_trade_should_return_correct_trade(
+        self,
+    ):
+        self.interactive_brokers_provider.interactive_brokers_api = (
+            InMemoryInteractiveBrokersApi(CANCEL_TRADES)
+        )
+        trades = self.interactive_brokers_provider.get_trades("STOCKC")
+
+        assert len(trades) == 1
+
+        trade = trades[0]
+
+        assert trade.transaction_type == TransactionType.BUY
+        assert trade.fee > 0
 
     def when_trade_is_sell_should_return_positive_quantity(self):
         trades = self.interactive_brokers_provider.get_trades("STOCKA")
