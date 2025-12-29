@@ -1,7 +1,16 @@
 import datetime
 from decimal import Decimal
 
-from ibflex import AssetClass, BuySell, Code, OpenClose, OrderType, Trade, TradeType
+from ibflex import (
+    AssetClass,
+    BuySell,
+    ChangeInDividendAccrual,
+    Code,
+    OpenClose,
+    OrderType,
+    Trade,
+    TradeType,
+)
 
 SELL = Trade(
     transactionType=TradeType.EXCHTRADE,
@@ -328,3 +337,50 @@ CANCEL_TRADES = [
 ]
 
 TRADES = BUYS + [SELL, FOREX] + NON_BUY_SELL_TRADES
+
+DIVIDENDS = [
+    ChangeInDividendAccrual(
+        date=datetime.date(2025, 12, 3),
+        assetCategory=AssetClass.STOCK,
+        currency="USD",
+        fxRateToBase=Decimal("1"),
+        accountId="U123456789",
+        symbol="STOCKA",
+        description="STOCK A",
+        reportDate=datetime.date(2025, 12, 4),
+        exDate=datetime.date(2025, 12, 4),
+        payDate=datetime.date(2025, 12, 18),
+        quantity=Decimal("0.6583"),
+        tax=Decimal("0"),
+        fee=Decimal("0"),
+        grossRate=Decimal("0.09"),
+        grossAmount=Decimal("0.06"),
+        netAmount=Decimal("0.06"),
+        code=(Code.POSTACCRUAL,),
+        underlyingSymbol="STOCKA",
+        multiplier=Decimal("1"),
+        actionID=Decimal("149766144"),
+    ),
+    ChangeInDividendAccrual(
+        date=datetime.date(2025, 12, 18),
+        assetCategory=AssetClass.STOCK,
+        currency="USD",
+        fxRateToBase=Decimal("1"),
+        accountId="U123456789",
+        symbol="STOCKA",
+        description="STOCK A",
+        reportDate=datetime.date(2025, 12, 18),
+        exDate=datetime.date(2025, 12, 4),
+        payDate=datetime.date(2025, 12, 18),
+        quantity=Decimal("0.6583"),
+        tax=Decimal("0"),
+        fee=Decimal("0"),
+        grossRate=Decimal("0.09"),
+        grossAmount=Decimal("-0.06"),
+        netAmount=Decimal("-0.06"),
+        code=(Code.REVERSE,),
+        underlyingSymbol="STOCKA",
+        multiplier=Decimal("1"),
+        actionID=Decimal("149766144"),
+    ),
+]

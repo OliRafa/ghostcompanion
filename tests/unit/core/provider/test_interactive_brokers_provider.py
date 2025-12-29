@@ -14,8 +14,27 @@ class TastytradeAdapterFactory:
         )
 
 
-class TestGetAssets(TastytradeAdapterFactory):
-    def should_return_all_assets(self):
+class TestGetDividends(TastytradeAdapterFactory):
+    def when_given_synbol_should_return_dividends_for_symbol(self):
+        dividends = self.interactive_brokers_provider.get_dividends("STOCKA")
+
+        assert dividends
+
+    def should_not_return_dividend_reverts(self):
+        dividends = self.interactive_brokers_provider.get_dividends("STOCKA")
+
+        assert len(dividends) == 1
+
+    def should_have_timezone_in_executed_at(self):
+        dividends = self.interactive_brokers_provider.get_dividends("STOCKA")
+
+        dividend = dividends[0]
+
+        assert dividend.executed_at.tzinfo
+
+
+class TestGetSymbols(TastytradeAdapterFactory):
+    def should_return_all_symbols(self):
         results = self.interactive_brokers_provider.get_symbols()
 
         assert sorted(results) == ["STOCKA", "STOCKB"]
@@ -65,3 +84,10 @@ class TestGetTrades(TastytradeAdapterFactory):
         trade = trades[0]
 
         assert trade.fee > 0
+
+    def should_have_timezone_in_executed_at(self):
+        trades = self.interactive_brokers_provider.get_trades("STOCKA")
+
+        trade = trades[0]
+
+        assert trade.executed_at.tzinfo

@@ -1,15 +1,20 @@
 from typing import final, override
 
-from ibflex import AssetClass, Trade
+from ibflex import AssetClass, ChangeInDividendAccrual, Trade
 
 from ghostcompanion.core.ports.interactive_brokers import InteractiveBrokersPort
-from tests.resources.interactive_brokers import TRADES
+from tests.resources.interactive_brokers import DIVIDENDS, TRADES
 
 
 @final
 class InMemoryInteractiveBrokersApi(InteractiveBrokersPort):
     def __init__(self, trades: list[Trade] = TRADES) -> None:
         self.__trades = trades
+        self.__dividends = DIVIDENDS
+
+    @override
+    def get_dividends_by_symbol(self, symbol: str) -> list[ChangeInDividendAccrual]:
+        return list(filter(lambda x: x.symbol == symbol, self.__dividends))
 
     @override
     def get_symbols(self) -> list[str]:

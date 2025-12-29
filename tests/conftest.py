@@ -6,10 +6,12 @@ from pytest import fixture
 from ghostcompanion.core.entity.dividend_info import DividendInfo
 from ghostcompanion.core.entity.trade import Trade
 from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
 from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
 from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
+from tests.infra.interactive_brokers_api import InMemoryInteractiveBrokersApi
 from tests.infra.tastytrade_api import InMemoryTastytradeApi
 from tests.infra.yahoo_finance_api import InMemoryYahooFinanceApi
 
@@ -64,6 +66,14 @@ def stock_a_dividends() -> list[Trade]:
     tastytrade = TastytradeAdapter(InMemoryTastytradeApi())
 
     return tastytrade.get_dividends("STOCKA")
+
+
+@fixture
+def dividends_with_infos() -> list[Trade]:
+    interactive_brokers_provider = InteractiveBrokersProvider(
+        InMemoryInteractiveBrokersApi()
+    )
+    return interactive_brokers_provider.get_dividends("STOCKA")
 
 
 @fixture

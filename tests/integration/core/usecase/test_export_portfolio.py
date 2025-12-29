@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from pytest import fixture
 
+from ghostcompanion.core.entity.transaction_type import TransactionType
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
 from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
 from ghostcompanion.core.usecase.import_interactive_brokers_transactions import (
@@ -53,7 +54,12 @@ class TestExportPortfolio(ExportPortfolioFactory):
         orders = self.ghostfolio_adapter.get_orders_by_symbol(
             portfolio.account.id, "STOCKA"
         )
-        assert len(orders) == 2
+        orders = list(
+            filter(
+                lambda x: x.transaction_type != TransactionType.DIVIDEND,
+                orders,
+            )
+        )
         assert any(order.executed_at.year == 2024 for order in orders)
         assert any(order.executed_at.year == 2025 for order in orders)
 
@@ -63,6 +69,10 @@ class TestExportPortfolio(ExportPortfolioFactory):
         trades = legacy_portfolio.get_trades("STOCKA")
         for trade in trades:
             trade.description = "older_trade"
+
+        dividends = legacy_portfolio.get_dividends("STOCKA")
+        for dividend in dividends:
+            dividend.description = "older_trade"
 
         self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
 

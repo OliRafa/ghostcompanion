@@ -78,7 +78,10 @@ class Portfolio:
             self._assets.remove(asset)
 
     def add_dividends(
-        self, asset: str, dividends: list[Trade], dividend_infos: list[DividendInfo]
+        self,
+        asset: str,
+        dividends: list[Trade],
+        dividend_infos: list[DividendInfo] | None = None,
     ):
         asset: Asset = self.get_asset(asset)
         asset.add_dividends(dividends, dividend_infos)

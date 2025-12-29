@@ -26,7 +26,9 @@ class Asset:
         self._trades += trades
         self._trades = sorted(self._trades, key=lambda x: x.executed_at)
 
-    def add_dividends(self, dividends: list[Trade], dividend_infos: list[DividendInfo]):
+    def add_dividends(
+        self, dividends: list[Trade], dividend_infos: list[DividendInfo] | None = None
+    ):
         dividend_taxes = filter(
             lambda x: x.transaction_type == TransactionType.FEE, dividends
         )
@@ -44,13 +46,14 @@ class Asset:
                     self._trades.append(dividend)
 
                 case TransactionType.DIVIDEND:
-                    dividend_info: DividendInfo = min(
-                        dividend_infos,
-                        key=lambda x: abs(
-                            x.ex_dividend_date - dividend.executed_at.date()
-                        ),
-                    )
-                    dividend.unit_price = dividend_info.unit_price
+                    if dividend_infos:
+                        dividend_info: DividendInfo = min(
+                            dividend_infos,
+                            key=lambda x: abs(
+                                x.ex_dividend_date - dividend.executed_at.date()
+                            ),
+                        )
+                        dividend.unit_price = dividend_info.unit_price
 
                     dividend_tax = next(
                         filter(
@@ -76,12 +79,18 @@ class Asset:
         return trade in self._trades or trade in self._dividends
 
     def get_trade(
-        self, executed_at: datetime, quantity: Decimal, symbol: str, unit_price: Decimal
+        self,
+        executed_at: datetime,
+        fee: Decimal,
+        quantity: Decimal,
+        symbol: str,
+        unit_price: Decimal,
     ) -> Trade:
         try:
             return next(
                 filter(
                     lambda x: x.executed_at == executed_at
+                    and x.fee == fee
                     and x.quantity == quantity
                     and x.symbol == symbol
                     and x.unit_price == unit_price,
@@ -94,6 +103,7 @@ class Asset:
                 return next(
                     filter(
                         lambda x: x.executed_at == executed_at
+                        and x.fee == fee
                         and x.quantity == quantity
                         and x.symbol == symbol
                         and x.unit_price == unit_price,
@@ -106,7 +116,7 @@ class Asset:
 
     def delete_trade(self, trade: Trade):
         _trade = self.get_trade(
-            trade.executed_at, trade.quantity, trade.symbol, trade.unit_price
+            trade.executed_at, trade.fee, trade.quantity, trade.symbol, trade.unit_price
         )
 
         if _trade in self._dividends:

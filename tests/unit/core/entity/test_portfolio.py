@@ -221,3 +221,12 @@ class TestAddDividends(PortfolioFactory):
         results = self.portfolio.get_dividends("STOCKA")
 
         assert len(results) > 0
+
+    def when_all_info_is_in_dividend_shouldnt_need_dividend_infos(
+        self, dividends_with_infos
+    ):
+        self.portfolio.add_dividends("STOCKA", dividends_with_infos)
+
+        results = self.portfolio.get_dividends("STOCKA")
+
+        assert results

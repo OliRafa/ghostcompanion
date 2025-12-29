@@ -33,6 +33,10 @@ class ImportInteractiveBrokersTransactions:
             trades = self.interactive_brokers_provider.get_trades(symbol)
             portfolio.add_asset(symbol, trades)
 
+            dividends = self.interactive_brokers_provider.get_dividends(symbol)
+            if dividends:
+                portfolio.add_dividends(symbol, dividends)
+
         try:
             symbol_mappings = self.symbol_mapping_repository.get_symbol_mappings()
             print("Handling symbol changes from mapping file...")

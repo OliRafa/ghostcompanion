@@ -47,6 +47,19 @@ class AssetFactory:
         )
 
     @fixture
+    def dividend_with_infos(self) -> Trade:
+        return Trade(
+            executed_at=datetime.datetime(
+                2023, 11, 30, 0, tzinfo=datetime.timezone.utc
+            ),
+            fee=Decimal("0.0"),
+            quantity=Decimal("2.0"),
+            unit_price=Decimal("12.5"),
+            symbol="STOCKA",
+            transaction_type=TransactionType.DIVIDEND,
+        )
+
+    @fixture
     def trade(self) -> Trade:
         return Trade(
             executed_at=datetime.datetime(
@@ -127,19 +140,20 @@ class TestHasTrade(AssetFactory):
 class TestGetTrade(AssetFactory):
     def should_return_trade(self, trade: Trade):
         result = self.asset.get_trade(
-            trade.executed_at, trade.quantity, trade.symbol, trade.unit_price
+            trade.executed_at, trade.fee, trade.quantity, trade.symbol, trade.unit_price
         )
 
         assert result == trade
 
-    def when_given_dividend_should_return_it(self, dividend, dividend_info):
-        self.asset.add_dividends([dividend], [dividend_info])
+    def when_given_dividend_should_return_it(self, dividend_with_infos: Trade):
+        self.asset.add_dividends([dividend_with_infos])
 
         result = self.asset.get_trade(
-            dividend.executed_at,
-            dividend.quantity,
-            dividend.symbol,
-            dividend.unit_price,
+            dividend_with_infos.executed_at,
+            dividend_with_infos.fee,
+            dividend_with_infos.quantity,
+            dividend_with_infos.symbol,
+            dividend_with_infos.unit_price,
         )
 
         assert result.transaction_type == TransactionType.DIVIDEND
@@ -147,7 +161,11 @@ class TestGetTrade(AssetFactory):
     def when_trade_isnt_found_should_raise_exception(self):
         with pytest.raises(TradeNotFoundException):
             self.asset.get_trade(
-                datetime.datetime.now(), Decimal("0.0"), "NOTASYMBOL", Decimal("0.0")
+                datetime.datetime.now(),
+                Decimal("0.0"),
+                Decimal("0.0"),
+                "NOTASYMBOL",
+                Decimal("0.0"),
             )
 
 
@@ -261,3 +279,14 @@ class TestAddDividends(AssetFactory):
         trades = self.asset.trades
 
         assert len(trades) == trade_count_before_dividends + 1
+
+    def when_dividend_comes_with_infos_should_add_it_as_is(
+        self, dividend_with_infos: Trade
+    ):
+        self.asset.add_dividends([dividend_with_infos])
+        dividends = self.asset.dividends
+
+        assert len(dividends) == 1
+        assert dividends[0].transaction_type == TransactionType.DIVIDEND
+        assert dividends[0].fee == dividend_with_infos.fee
+        assert dividends[0].unit_price > 0

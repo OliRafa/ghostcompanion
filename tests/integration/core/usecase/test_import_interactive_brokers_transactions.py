@@ -52,3 +52,8 @@ class TestImportInteractiveBrokersTransactions(
         portfolio = self.import_interactive_brokers_transactions.execute()
 
         assert portfolio.has_asset("FOREX") is False
+
+    def should_include_dividends(self):
+        portfolio = self.import_interactive_brokers_transactions.execute()
+
+        assert portfolio.get_dividends("STOCKA")

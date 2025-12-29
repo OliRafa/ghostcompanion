@@ -1,6 +1,13 @@
 from typing import final, override
 
-from ibflex import AssetClass, FlexStatement, Trade, client, parser
+from ibflex import (
+    AssetClass,
+    ChangeInDividendAccrual,
+    FlexStatement,
+    Trade,
+    client,
+    parser,
+)
 
 from ghostcompanion.configs.settings import InteractiveBrokersSettings
 from ghostcompanion.core.ports.interactive_brokers import InteractiveBrokersPort
@@ -17,6 +24,15 @@ class InteractiveBrokersApi(InteractiveBrokersPort):
         )
         flex_query = parser.parse(response)
         return flex_query.FlexStatements[0]
+
+    @override
+    def get_dividends_by_symbol(self, symbol: str) -> list[ChangeInDividendAccrual]:
+        return list(
+            filter(
+                lambda x: x.symbol == symbol,
+                self.__account_statement.ChangeInDividendAccruals,
+            )
+        )
 
     @override
     def get_symbols(self) -> list[str]:

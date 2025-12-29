@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from datetime import datetime, timezone
 from decimal import Decimal
 from itertools import chain
 from typing import final
@@ -15,10 +16,16 @@ class InteractiveBrokersProvider:
     def __init__(self, interactive_brokers_api: InteractiveBrokersPort) -> None:
         self.interactive_brokers_api = interactive_brokers_api
 
+    def get_dividends(self, symbol: str | None = None) -> list[Trade]:
+        if symbol:
+            dividends = self.interactive_brokers_api.get_dividends_by_symbol(symbol)
+            dividends = self.__filter_reverted_dividends(dividends)
+            return list(map(self.__adapt_dividends, dividends))
+
+        return []
+
     def get_symbols(self) -> list[str]:
         return self.interactive_brokers_api.get_symbols()
-
-    def get_dividends(self, symbol: str | None = None) -> list[Trade]: ...
 
     def get_trades(self, symbol: str | None = None) -> list[Trade]:
         if symbol:
@@ -46,10 +53,26 @@ class InteractiveBrokersProvider:
         trades = self.__filter_canceled_trades(trades, cancels)
         return list(map(self.__adapt_trade, trades))
 
+    def __adapt_dividends(self, dividend: ibflex.ChangeInDividendAccrual) -> Trade:
+        return Trade(
+            currency=dividend.currency,
+            executed_at=datetime(
+                year=dividend.exDate.year,
+                month=dividend.exDate.month,
+                day=dividend.exDate.day,
+                tzinfo=timezone.utc,
+            ),
+            fee=(dividend.fee or Decimal("0")) + (dividend.tax or Decimal("0")),
+            quantity=dividend.quantity or Decimal("0"),
+            unit_price=dividend.grossRate or Decimal("0"),
+            symbol=dividend.symbol,
+            transaction_type=TransactionType.DIVIDEND,
+        )
+
     def __adapt_trade(self, trade: ibflex.Trade) -> Trade:
         return Trade(
             currency=trade.currency,
-            executed_at=trade.dateTime,
+            executed_at=trade.dateTime.replace(tzinfo=timezone.utc),
             fee=abs(trade.ibCommission or Decimal("0"))
             + abs(trade.taxes or Decimal("0")),
             quantity=abs(trade.quantity or Decimal("0")),
@@ -82,3 +105,9 @@ class InteractiveBrokersProvider:
                 continue
 
         return chain(non_canceled_trades, buy_after_cancel_trades)
+
+    @staticmethod
+    def __filter_reverted_dividends(
+        dividends: Iterable[ibflex.ChangeInDividendAccrual],
+    ) -> Iterable[ibflex.ChangeInDividendAccrual]:
+        return filter(lambda x: x.code[0] == ibflex.Code.POSTACCRUAL, dividends)
