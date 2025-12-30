@@ -70,12 +70,17 @@ Start by setting up the appropriate environment variables, listed below.
 | `COINBASE_SECRET`          | `string`            |                       | The _Coinbase_ Secret. It must be generated according to the <a href="https://docs.cdp.coinbase.com/coinbase-app/authentication-authorization/api-key-authentication#creating-api-keys" target="_blank">Coinbase API official documentation</a>.|
 | `GHOSTFOLIO_ACCOUNT_TOKEN` | `string`            |                       | The _Ghostfolio_ Account Token.                                                                                                                                         |
 | `GHOSTFOLIO_BASE_URL`      | `string` (optional) | "<https://ghostfol.io>" | The _Ghostfolio_ URL. If you're self hosting you should change it for your particular instance URL, otherwise all data will be exported to _Ghostfolio_ cloud offering. |
-| `TASTYTRADE_CLIENT_SECRET`      | `string`            |                       | The _Tastytrade_ Client Secret.                                                                                                                                              |
+| `IBKR_QUERY`               | `string`            |                       | The _Interactive Brokers_ Flex Query ID.                                                                                                                                              |
+| `IBKR_TOKEN`               | `string`            |                       | The _Interactive Brokers_ Flex Query Token.                                                                                                                                              |
+| `TASTYTRADE_CLIENT_SECRET` | `string`            |                       | The _Tastytrade_ Client Secret.                                                                                                                                              |
 | `TASTYTRADE_REFRESH_TOKEN` | `string`            |                       | The _Tastytrade_ Refresh Token.                                                                                                                                              |
 
 For how to generate the TastyTrade variables, please refer to [this documentation](https://tastyworks-api.readthedocs.io/en/latest/sessions.html).
 For how to generate the Interactive Brokers variables, please refer to
 [Interactive Brokers Flex Queries and Caveats](#interactive-brokers-flex-queries-and-caveats).
+
+If you don't wish to use all available providers when importing transactions,
+simply don't provide the environment variables related to it.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
