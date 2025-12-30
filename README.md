@@ -29,10 +29,10 @@ Currently implemented for [Coinbase](https://coinbase.com),
 
 * [Getting Started](#getting-started)
   * [Environment Variables](#environment-variables)
-* [Interactive Brokers Flex Queries and Caveats](#interactive-brokers-flex-queries-and-caveats)
   * [Docker](#docker)
   * [Docker Compose](#docker-compose)
   * [Kubernetes](#kubernetes)
+* [Interactive Brokers Flex Queries and Caveats](#interactive-brokers-flex-queries-and-caveats)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
   * [Top contributors](#top-contributors)
@@ -74,36 +74,10 @@ Start by setting up the appropriate environment variables, listed below.
 | `TASTYTRADE_REFRESH_TOKEN` | `string`            |                       | The _Tastytrade_ Refresh Token.                                                                                                                                              |
 
 For how to generate the TastyTrade variables, please refer to [this documentation](https://tastyworks-api.readthedocs.io/en/latest/sessions.html).
+For how to generate the Interactive Brokers variables, please refer to
+[Interactive Brokers Flex Queries and Caveats](#interactive-brokers-flex-queries-and-caveats).
 
-## Interactive Brokers Flex Queries and Caveats
-
-Current implementation for getting Interactive Brokers transactions
-relies on Flex Queries.
-
-To generate the Flex Query, please refer to
-[the official documentation](https://www.ibkrguides.com/orgportal/performanceandstatements/flex.htm).
-
-At minimum, you'll need the following configurations:
-
-* Select `Change in Dividend Accruals`
-  * Mark all checkboxes
-* Select `Trades`
-  * Select `Execution`
-  * Mark all checkboxes
-* Select Format `XML`
-* Select Date Format `yyyyMMdd`
-* Select Time Format `HHmmss`
-* Select Date/Time Separator `; (semi-colon)`
-* Select `Include Canceled Trades`
-
-On `Period` comes the caveat.
-Flex Queries only allows for a maximum period of `Last 365 Calendar Days`,
-which means that any transaction prior to that date won't be listed in the
-Flex Query, and hence it won't be automatically inserted into Ghostfolio.
-
-This means that any transaction prior to that date should be added manually
-in Ghostfolio, and GhostCompanion won't change those when updating the account
-with new transactions.
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Docker
 
@@ -124,7 +98,9 @@ To unleash the plugin's potential, you would want to deploy it scheduled
 to run from time to time (weekly, for example).
 For that, two approaches are presented, deploying using
 [Docker Compose](#docker-compose) or in your
-[Kubernetes](#kubernetes)cluster.
+[Kubernetes](#kubernetes) cluster.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Docker Compose
 
@@ -157,6 +133,8 @@ docker compose up -d
 ```
 
 It will deploy it in your Docker Compose infrastructure, running weekly by default.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Kubernetes
 
@@ -211,7 +189,38 @@ spec:
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- ROADMAP -->
+## Interactive Brokers Flex Queries and Caveats
+
+Current implementation for getting Interactive Brokers transactions
+relies on Flex Queries.
+
+To generate the Flex Query, please refer to
+[the official documentation](https://www.ibkrguides.com/orgportal/performanceandstatements/flex.htm).
+
+At minimum, you'll need the following configurations:
+
+* Select `Change in Dividend Accruals`
+  * Mark all checkboxes
+* Select `Trades`
+  * Select `Execution`
+  * Mark all checkboxes
+* Select Format `XML`
+* Select Date Format `yyyyMMdd`
+* Select Time Format `HHmmss`
+* Select Date/Time Separator `; (semi-colon)`
+* Select `Include Canceled Trades`
+
+On `Period` comes the caveat.
+Flex Queries only allows for a maximum period of `Last 365 Calendar Days`,
+which means that any transaction prior to that date won't be listed in the
+Flex Query, and hence it won't be automatically inserted into Ghostfolio.
+
+This means that any transaction prior to that date should be added manually
+in Ghostfolio, and GhostCompanion won't change those when updating the account
+with new transactions.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Roadmap
 
 * [-] Coinbase
