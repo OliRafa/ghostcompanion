@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.1.0](https://github.com/OliRafa/ghostcompanion/compare/v2.0.1...v2.1.0) (2025-12-30)
+
+
+### Bug Fixes
+
+* duplicating orders because of different fee values ([90e6072](https://github.com/OliRafa/ghostcompanion/commit/90e6072204b2be72eaa11e000217abf816e4010c))
+* **ghostfolio:** ibkr duplicated trades insert ([7a59816](https://github.com/OliRafa/ghostcompanion/commit/7a59816ceba532abba9ffaaad33cb62dd2aa18d5))
+* **interactive-brokers:** cancel trades not being correctly filtered ([4d6b9d9](https://github.com/OliRafa/ghostcompanion/commit/4d6b9d93ecd8e6670f48a7a71cff54ddbcf4898c))
+* **interactive-brokers:** not importing ibkr trades when ghostfolio has older trades than what flexqueries gives ([55290f8](https://github.com/OliRafa/ghostcompanion/commit/55290f8d2535814654e623e70164f524e3201466))
+* **settings:** reading new lines in coinbase secret as \\n ([fe7e21e](https://github.com/OliRafa/ghostcompanion/commit/fe7e21e097d708a954c7b38bf033586f2972778a))
+
+
+### Features
+
+* **interactive-brokers:** add dividends ([70d605a](https://github.com/OliRafa/ghostcompanion/commit/70d605ac1ead86a2c3ef794145ed0d94fbfff27a))
+* **interactive-brokers:** add trades importer ([f6c86c7](https://github.com/OliRafa/ghostcompanion/commit/f6c86c71c2b2b6b5cfed962f156eebd6976b9e8e))
+
 ## [2.0.1](https://github.com/OliRafa/ghostcompanion/compare/v2.0.0...v2.0.1) (2025-12-09)
 
 
