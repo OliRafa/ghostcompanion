@@ -19,7 +19,7 @@ Currently implemented for [Coinbase](https://coinbase.com),
 [Getting Started](#getting-started) •
 [Report Bug](https://github.com/OliRafa/ghostcompanion/issues/new?labels=bug&template=bug-report---.md) •
 [Request Feature](https://github.com/OliRafa/ghostcompanion/issues/new?labels=enhancement&template=feature-request---.md) •
-[roadmap](#roadmap)
+[Roadmap](#roadmap)
 </div>
 
 <!-- TABLE OF CONTENTS -->
