@@ -11,6 +11,7 @@
 # GhostCompanion
 
 Transfer transactions from numerous sources to [Ghostfolio](https://github.com/ghostfolio/ghostfolio).
+
 Currently implemented for [Coinbase](https://coinbase.com),
 [Interactive Brokers (IBKR)](https://www.interactivebrokers.com) and [Tastytrade](https://tastytrade.com).
 <br />
