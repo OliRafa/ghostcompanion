@@ -41,6 +41,11 @@ This project uses **Poetry** for dependency management and packaging.
   poetry run black .
   poetry run isort .
   ```
+- **Check formatting without changes**:
+  ```bash
+  poetry run black --check .
+  poetry run isort --check-only .
+  ```
 - **Configuration**:
   - `black` handles formatting (line length 88).
   - `isort` sorts imports (profile "black").
@@ -94,7 +99,20 @@ The project follows a Clean Architecture structure:
 - **Integration Tests** (`tests/integration`): Test interactions between components.
 - **Fixtures**: Use `pytest.fixture` heavily. Group common fixtures in "Factory" classes or `conftest.py`.
 
-## 3. Workflow and Commits
+## 3. CI/CD Workflows
+
+GitHub Actions workflows are defined in `.github/workflows/`:
+
+- **`continuous_integration.yml`**: Runs on push/PR to main
+  - Checks code formatting with Black
+  - Validates import sorting with isort
+  - Runs pytest test suite
+  
+- **`continuous_delivery.yml`**: Runs on push to main
+  - Creates semantic releases
+  - Builds and publishes Docker images
+
+## 4. Workflow and Commits
 
 ### Commit Messages
 - **Format**: Follow [Conventional Commits](https://www.conventionalcommits.org/).
