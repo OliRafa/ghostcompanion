@@ -7,6 +7,7 @@ from ghostcompanion.core.entity.dividend_info import DividendInfo
 from ghostcompanion.core.entity.trade import Trade
 from ghostcompanion.core.entity.transaction_type import TransactionType
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
+from ghostcompanion.core.provider.tastytrade import TastytradeProvider
 from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
@@ -63,9 +64,11 @@ def stock_b_trades(stock_a_trades) -> list[Trade]:
 
 @fixture
 def stock_a_dividends() -> list[Trade]:
-    tastytrade = TastytradeAdapter(InMemoryTastytradeApi())
+    tastytrade_api = InMemoryTastytradeApi()
+    tastytrade_adapter = TastytradeAdapter(tastytrade_api)
+    tastytrade_provider = TastytradeProvider(tastytrade_adapter)
 
-    return tastytrade.get_dividends("STOCKA")
+    return tastytrade_provider.get_dividends("STOCKA")
 
 
 @fixture

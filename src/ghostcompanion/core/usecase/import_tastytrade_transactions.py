@@ -1,9 +1,9 @@
 from ghostcompanion.core.entity.portfolio import Portfolio
+from ghostcompanion.core.provider.tastytrade import TastytradeProvider
 from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
-from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
 from ghostcompanion.repositories.symbol_mapping import (
     SymbolMappingRepository,
     SymbolMappingsNotFoundException,
@@ -16,7 +16,7 @@ class ImportTastytradeTransactions:
         dividends_provider: DividendsProviderAdapter,
         ghostfolio: GhostfolioAdapter,
         symbol_mapping_repository: SymbolMappingRepository,
-        tastytrade: TastytradeAdapter,
+        tastytrade: TastytradeProvider,
     ) -> None:
         self.dividends_provider = dividends_provider
         self.ghostfolio = ghostfolio
@@ -59,7 +59,7 @@ class ImportTastytradeTransactions:
                 if outdated_orders:
                     print(
                         f'Deleting outdated orders for "{change.old_symbol}" '
-                        f'after changing to "{change.new}"...'
+                        f'after changing to "{change.new_symbol}"...'
                     )
                     self.ghostfolio.delete_orders(outdated_orders)
 

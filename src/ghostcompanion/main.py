@@ -1,6 +1,7 @@
 from ghostcompanion.configs.settings import Settings
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
+from ghostcompanion.core.provider.tastytrade import TastytradeProvider
 from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
 from ghostcompanion.core.usecase.import_coinbase_transactions import (
     ImportCoinbaseTransactions,
@@ -62,10 +63,14 @@ if __name__ == "__main__":
         export_portfolio.execute(portfolio)
 
     if _should_run_tastytrade_importer():
-        tastytrade = TastytradeAdapter(TastytradeApi())
+        tastytrade_api = TastytradeAdapter(TastytradeApi())
+        tastytrade_provider = TastytradeProvider(tastytrade_api)
         dividends_provider = DividendsProviderAdapter(YahooFinanceApi())
         import_tastytrade_transactions = ImportTastytradeTransactions(
-            dividends_provider, ghostfolio, symbol_mapping_repository, tastytrade
+            dividends_provider,
+            ghostfolio,
+            symbol_mapping_repository,
+            tastytrade_provider,
         )
 
         portfolio = import_tastytrade_transactions.execute()
