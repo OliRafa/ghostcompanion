@@ -8,4 +8,5 @@ class DividendsProviderPort(ABC):
     @abstractmethod
     def get_by_symbol(
         self, symbol: str, start_date: datetime.date, end_date: datetime.date
-    ) -> list[DividendInfo | None]: ...
+    ) -> list[DividendInfo | None]:
+        ...

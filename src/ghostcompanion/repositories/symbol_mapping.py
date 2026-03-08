@@ -6,7 +6,8 @@ import yaml
 from ghostcompanion.core.entity.symbol_change import SymbolChange
 
 
-class SymbolMappingsNotFoundException(Exception): ...
+class SymbolMappingsNotFoundException(Exception):
+    ...
 
 
 @final

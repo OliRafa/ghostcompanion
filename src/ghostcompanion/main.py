@@ -15,9 +15,7 @@ from ghostcompanion.infra.coinbase.coinbase_api import CoinbaseApi
 from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
-from ghostcompanion.infra.dividends_provider.yahoo_finance_api import (
-    YahooFinanceApi,
-)
+from ghostcompanion.infra.dividends_provider.yahoo_finance_api import YahooFinanceApi
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 from ghostcompanion.infra.ghostfolio.ghostfolio_api import GhostfolioApi
 from ghostcompanion.infra.interactive_brokers.interactive_brokers_api import (

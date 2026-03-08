@@ -4,9 +4,7 @@ from typing import Optional
 
 from ghostcompanion.core.entity.dividend_info import DividendInfo
 from ghostcompanion.core.ports.dividends_provider import DividendsProviderPort
-from ghostcompanion.infra.dividends_provider.yahoo_finance_api import (
-    YahooFinanceApi,
-)
+from ghostcompanion.infra.dividends_provider.yahoo_finance_api import YahooFinanceApi
 
 
 class DividendsProviderAdapter(DividendsProviderPort):
