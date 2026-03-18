@@ -1,4 +1,6 @@
 import json
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, final, override
 from uuid import uuid4
@@ -29,7 +31,7 @@ class InMemoryGhostfolioApi(GhostfolioPort):
             },
             {
                 "balance": 0,
-                "comment": "Created by Tastytrade-Ghostfolio.",
+                "comment": "Created by Ghostcompanion.",
                 "createdAt": "2025-01-16T18:56:45.495Z",
                 "currency": "USD",
                 "id": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
@@ -46,6 +48,8 @@ class InMemoryGhostfolioApi(GhostfolioPort):
             },
         ]
         self._orders = self._load_orders()
+        self._balances: dict[str, list[dict]] = {}  # account_id -> balances
+        self._api_call_count = 0  # Track API calls for optimization tests
 
     @override
     def get_orders(self, account_id: str | None = None) -> dict[str, Any]:
@@ -85,3 +89,44 @@ class InMemoryGhostfolioApi(GhostfolioPort):
             del order["symbol"]
 
         self._orders += orders
+
+    # Cash Balance Methods
+
+    @override
+    def get_account_balances(self, account_id: str) -> list[dict]:
+        self._api_call_count += 1
+        return self._balances.get(account_id, [])
+
+    @override
+    def create_account_balance(
+        self, account_id: str, date: date, value: Decimal
+    ) -> dict:
+        self._api_call_count += 1
+        balance = {
+            "id": str(uuid4()),
+            "date": date.isoformat(),
+            "value": float(value),
+        }
+        if account_id not in self._balances:
+            self._balances[account_id] = []
+        self._balances[account_id].append(balance)
+        return balance
+
+    # Test helper methods
+
+    def get_api_call_count(self) -> int:
+        """Get the number of API calls made (for testing optimization)."""
+        return self._api_call_count
+
+    def reset_api_call_count(self) -> None:
+        """Reset the API call counter."""
+        self._api_call_count = 0
+
+    def get_balances_for_account(self, account_id: str) -> list[dict]:
+        """Test helper to get balances for an account."""
+        return self._balances.get(account_id, [])
+
+    def clear_balances(self) -> None:
+        """Clear all balances (for test isolation)."""
+        self._balances.clear()
+        self._api_call_count = 0

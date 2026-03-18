@@ -10,17 +10,26 @@ from tests.resources.tastytrade.tastytrade_transactions import TRANSACTIONS
 class InMemoryTastytradeApi(TastytradePort):
     """In-memory mock of Tastytrade SDK for testing"""
 
-    def __init__(self):
+    def __init__(self, current_cash_balance: Decimal = Decimal("1000.00")):
         self._trades = TRANSACTIONS
+        self._current_cash_balance = current_cash_balance
 
     def get_trades_history(self) -> list[Transaction]:
         return self._trades
+
+    def set_current_cash_balance(self, balance: Decimal) -> None:
+        """Set the current cash balance for testing."""
+        self._current_cash_balance = balance
+
+    def get_current_cash_balance(self) -> Decimal:
+        """Return the current cash balance for testing."""
+        return self._current_cash_balance
 
 
 class InMemoryTastytradeApiWithExtraTransaction(TastytradePort):
     """In-memory mock that includes an extra non-trade transaction for testing filtering"""
 
-    def __init__(self):
+    def __init__(self, current_cash_balance: Decimal = Decimal("1000.00")):
         # Copy existing transactions and add a non-trade entry
         self._trades = list(TRANSACTIONS)
         self._trades.append(
@@ -38,15 +47,24 @@ class InMemoryTastytradeApiWithExtraTransaction(TastytradePort):
                 symbol=None,
             )
         )
+        self._current_cash_balance = current_cash_balance
 
     def get_trades_history(self) -> list[Transaction]:
         return self._trades
+
+    def set_current_cash_balance(self, balance: Decimal) -> None:
+        """Set the current cash balance for testing."""
+        self._current_cash_balance = balance
+
+    def get_current_cash_balance(self) -> Decimal:
+        """Return the current cash balance for testing."""
+        return self._current_cash_balance
 
 
 class InMemoryTastytradeApiWithDividendOnlyAsset(TastytradePort):
     """In-memory mock that includes a dividend-only asset (no trades) for testing asset detection"""
 
-    def __init__(self):
+    def __init__(self, current_cash_balance: Decimal = Decimal("1000.00")):
         # Copy existing transactions and add a dividend-only entry
         self._trades = list(TRANSACTIONS)
         self._trades.append(
@@ -67,6 +85,15 @@ class InMemoryTastytradeApiWithDividendOnlyAsset(TastytradePort):
                 price=Decimal("10.0"),
             )
         )
+        self._current_cash_balance = current_cash_balance
 
     def get_trades_history(self) -> list[Transaction]:
         return self._trades
+
+    def set_current_cash_balance(self, balance: Decimal) -> None:
+        """Set the current cash balance for testing."""
+        self._current_cash_balance = balance
+
+    def get_current_cash_balance(self) -> Decimal:
+        """Return the current cash balance for testing."""
+        return self._current_cash_balance

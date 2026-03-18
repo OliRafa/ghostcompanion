@@ -9,6 +9,9 @@ from ghostcompanion.core.usecase.import_coinbase_transactions import (
 from ghostcompanion.core.usecase.import_interactive_brokers_transactions import (
     ImportInteractiveBrokersTransactions,
 )
+from ghostcompanion.core.usecase.import_tastytrade_cash_balances import (
+    ImportTastytradeCashBalances,
+)
 from ghostcompanion.core.usecase.import_tastytrade_transactions import (
     ImportTastytradeTransactions,
 )
@@ -75,6 +78,14 @@ if __name__ == "__main__":
 
         portfolio = import_tastytrade_transactions.execute()
         export_portfolio.execute(portfolio)
+
+        # Import cash balances from Tastytrade
+        print("\n--- Importing Cash Balances ---")
+        import_cash_balances = ImportTastytradeCashBalances(
+            tastytrade_provider, ghostfolio
+        )
+        import_cash_balances.execute()
+        print("--- Cash Balances Import Complete ---\n")
 
     if _should_run_interactive_brokers_importer():
         interactive_brokers = InteractiveBrokersProvider(InteractiveBrokersApi())

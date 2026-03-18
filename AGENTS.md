@@ -99,11 +99,58 @@ This project uses **Poetry** for dependency management and packaging.
   - Bad: `from ..entity.trade import Trade`
 - **Sorting**: Imports must be sorted alphabetically and separated by type (stdlib, third-party, local) - handled by `isort`.
 
-### Error Handling
+### Abbreviations
+
+Avoid abbreviations in code unless they are:
+1. **Widely known** (e.g., `API`, `HTTP`, `URL`, `ID`)
+2. **Domain-specific** (e.g., `USD`, `EUR`, `GBP` for currency codes)
+3. **Standard conventions** (e.g., `i`, `j`, `k` for loop indices)
+
+When using domain-specific abbreviations, prefer the full name unless the abbreviation is universally understood in that domain. Examples:
+- ✅ `transaction` (not `tx`)
+- ✅ `balance` (not `bal`)
+- ✅ `currency` (not `curr`)
+- ✅ `account` (not `acc`)
+- ✅ `amount` (not `amt`)
+- ✅ `value` (not `val`)
+- ✅ `identifier` (acceptable: `id` - widely known)
+- ✅ `API`, `HTTP`, `URL` (widely known technical terms)
+- ✅ `USD`, `EUR`, `GBP` (domain-specific currency codes)
 
 - Use specific exceptions defined in the project or standard library.
 - Avoid bare `except:` clauses.
 - Use `try...except` blocks to handle expected errors gracefully (e.g., `SymbolMappingsNotFoundException`).
+
+### Comments
+
+Comments should explain **WHY** the code exists or particular business decisions, not **WHAT** the code does. The code itself should be descriptive enough to explain its logic.
+
+**Good comments explain:**
+- Business rules and domain logic rationale
+- Non-obvious side effects or consequences
+- Workarounds for external system limitations
+- References to external documentation or requirements
+
+**Avoid comments that:**
+- Describe obvious code behavior
+- Explain what the next line does when the code is clear
+- Redundantly describe what type hints already show
+- State what docstrings already document
+
+**Examples:**
+
+❌ Bad - Explains obvious code:
+```python
+# Get the trades
+result = self._get_trades()
+```
+
+✅ Good - Explains business logic:
+```python
+# Tastytrade SDK pagination bug: only returns first page
+# per_page=1500 is workaround until upstream fix
+result = self._account.get_history(per_page=1500)
+```
 
 ### Architecture (Clean Architecture)
 
@@ -163,6 +210,44 @@ def test_should_return_all_assets(self):
 
 **For test-specific scenarios**: If you need to test edge cases that require specific data, extend the InMemory implementation or add test data to `tests/resources/` rather than creating one-off mocks.
 
+#### UseCase Testing
+
+UseCases should be tested with **Integration Tests** using **InMemory repositories**, not Unit Tests with mocks:
+
+- **Why InMemory over Mocks**: 
+  - Tests verify actual integration between layers (UseCase -> Provider -> Port)
+  - No need to update mocks when interfaces change
+  - Tests are more representative of real behavior
+  - Ensures the orchestration logic works correctly
+
+- **Test Location**: Place UseCase integration tests in `tests/integration/core/usecase/`
+
+- **Implementation Pattern**:
+  ```python
+  # In tests/integration/core/usecase/test_import_cash_balances.py
+  def test_should_synchronize_cash_balances():
+      # Arrange
+      tastytrade_api = InMemoryTastytradeCashApi()
+      ghostfolio_api = InMemoryGhostfolioCashApi()
+      
+      # Set up test data in InMemory repositories
+      tastytrade_api.set_cash_balances([
+          CashBalance(date=date(2024, 1, 1), amount=Decimal("1000"), currency="USD"),
+      ])
+      
+      provider = TastytradeCashBalanceProvider(tastytrade_api)
+      ghostfolio = GhostfolioAdapter(ghostfolio_api)
+      use_case = ImportTastytradeCashBalances(provider, ghostfolio)
+      
+      # Act
+      result = use_case.execute()
+      
+      # Assert
+      assert len(ghostfolio_api.get_account_balances("account-123")) == 1
+  ```
+
+- **Unit Tests for UseCases**: Only appropriate for pure business logic within the UseCase itself (rare). Most UseCase testing should be integration tests.
+
 ## 3. CI/CD Workflows
 
 GitHub Actions workflows are defined in `.github/workflows/`:
@@ -177,6 +262,20 @@ GitHub Actions workflows are defined in `.github/workflows/`:
   - Builds and publishes Docker images
 
 ## 4. Workflow and Commits
+
+### Commit Principles
+
+Commits should be **small, self-contained units of work** that:
+- ✅ Always leave the codebase in a working state
+- ✅ Can be easily rolled back if needed
+- ✅ Focus on a single logical change
+- ✅ Include all related changes (code, tests, docs) in one commit
+
+**Guidelines:**
+- Avoid mixing unrelated changes in a single commit
+- Each commit should pass all tests on its own
+- If a commit introduces a bug, it should be easy to revert without affecting other functionality
+- When in doubt, split into smaller commits rather than making one large commit
 
 ### Commit Messages
 

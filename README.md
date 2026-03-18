@@ -243,7 +243,7 @@ with new transactions.
   * [x] Forward share splits
   * [x] Symbol changes
   * [x] Dividends and dividend reinvestments
-  * [ ] Account balance
+  * [x] Account balance
 
 See the [open issues](https://github.com/OliRafa/ghostcompanion/issues)
 for a full list of proposed features (and known issues).

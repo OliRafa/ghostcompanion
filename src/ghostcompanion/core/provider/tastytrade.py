@@ -5,6 +5,7 @@ from typing import Iterable
 
 from tastytrade.account import Transaction
 
+from ghostcompanion.core.entity.cash_balance import CashBalance
 from ghostcompanion.core.entity.split import Split
 from ghostcompanion.core.entity.symbol_change import SymbolChange
 from ghostcompanion.core.entity.trade import Trade
@@ -191,3 +192,20 @@ class TastytradeProvider:
             return filter(lambda x: x.symbol == asset, transactions)
 
         return transactions
+
+    # Cash Balance Methods
+
+    def get_current_cash_balance(self, currency: str = "USD") -> CashBalance:
+        """Get the current cash balance from Tastytrade account.
+
+        Returns a single CashBalance with today's date and the current
+        cash amount from the provider.
+
+        Args:
+            currency: The account currency (default "USD")
+
+        Returns:
+            CashBalance with today's date and current cash amount
+        """
+        cash_amount = self.tastytrade_api.get_current_cash_balance()
+        return CashBalance(date=date.today(), amount=cash_amount, currency=currency)

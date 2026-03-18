@@ -1,3 +1,5 @@
+from datetime import date
+from decimal import Decimal
 from typing import Any, final
 
 import requests
@@ -168,3 +170,77 @@ class GhostfolioApi(GhostfolioPort):
             raise Exception(
                 f"Error while deleting order in Ghostfolio: {response.json()}"
             )
+
+    # Cash Balance Methods
+
+    def get_account_balances(self, account_id: str) -> list[dict]:
+        """Get all cash balances for an account.
+
+        Parameters
+        ----------
+        account_id : str
+            The account ID to get balances for.
+
+        Returns
+        -------
+        list[dict]
+            List of balance objects with id, date, and value.
+            Format: [{"id": "uuid", "date": "2024-01-15", "value": 1250.50}, ...]
+
+        Raises
+        ------
+        Exception
+            When the request fails.
+        """
+        try:
+            response = requests.get(
+                f"{GhostfolioSettings.BASE_URL}/account/{account_id}/balances",
+                headers=self.AUTHORIZATION_HEADER,
+            )
+            response.raise_for_status()
+            return response.json().get("balances", [])
+
+        except requests.exceptions.HTTPError as ex:
+            raise Exception(f"Error while fetching account balances: {ex}")
+
+    def create_account_balance(
+        self, account_id: str, date: date, value: Decimal
+    ) -> dict:
+        """Create a new cash balance for an account.
+
+        Parameters
+        ----------
+        account_id : str
+            The account ID.
+        date : date
+            The balance date.
+        value : Decimal
+            The cash balance value.
+
+        Returns
+        -------
+        dict
+            The created balance object.
+
+        Raises
+        ------
+        Exception
+            When the creation fails.
+        """
+        try:
+            payload = {
+                "accountId": account_id,
+                "balance": float(value),
+                "date": date.isoformat(),
+            }
+
+            response = requests.post(
+                f"{GhostfolioSettings.BASE_URL}/account-balance",
+                headers=self.AUTHORIZATION_HEADER,
+                json=payload,
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.HTTPError as ex:
+            raise Exception(f"Error while creating account balance: {ex}")

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from tastytrade import Account, Session
 from tastytrade.account import Transaction
 
@@ -23,3 +25,12 @@ class TastytradeApi:
         # `per_page` here is just an arbitrary number to try to bypass this issue
         # while a proper fix is not in place.
         return self._account.get_history(self._session, per_page=1500)
+
+    def get_current_cash_balance(self) -> Decimal:
+        """Get the current cash balance from Tastytrade account.
+
+        Returns:
+            Decimal: The current cash balance amount.
+        """
+        balance = self._account.get_balances(self._session)
+        return balance.cash_balance
