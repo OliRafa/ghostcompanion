@@ -2,7 +2,7 @@
     {
         "accountId": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
         "accountUserId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
-        "comment": "Activity created by Tastytrade-Ghostfolio.",
+        "comment": "Activity created by Ghostcompanion.",
         "createdAt": "2025-01-16T19:23:46.134Z",
         "currency": null,
         "date": "2021-05-14T00:00:00.000Z",
@@ -17,7 +17,7 @@
         "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
         "Account": {
             "balance": 0,
-            "comment": "Created by Tastytrade-Ghostfolio.",
+            "comment": "Created by Ghostcompanion.",
             "createdAt": "2025-01-16T18:56:45.495Z",
             "currency": "USD",
             "id": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
@@ -62,7 +62,7 @@
     {
         "accountId": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
         "accountUserId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
-        "comment": "Activity created by Tastytrade-Ghostfolio.",
+        "comment": "Activity created by Ghostcompanion.",
         "createdAt": "2025-01-16T19:23:46.131Z",
         "currency": null,
         "date": "2021-05-25T00:00:00.000Z",
@@ -77,7 +77,7 @@
         "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
         "Account": {
             "balance": 0,
-            "comment": "Created by Tastytrade-Ghostfolio.",
+            "comment": "Created by Ghostcompanion.",
             "createdAt": "2025-01-16T18:56:45.495Z",
             "currency": "USD",
             "id": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
@@ -122,7 +122,7 @@
     {
         "accountId": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
         "accountUserId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
-        "comment": "Activity created by Tastytrade-Ghostfolio.",
+        "comment": "Activity created by Ghostcompanion.",
         "createdAt": "2025-01-16T19:23:46.126Z",
         "currency": null,
         "date": "2021-10-13T00:00:00.000Z",
@@ -137,7 +137,7 @@
         "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
         "Account": {
             "balance": 0,
-            "comment": "Created by Tastytrade-Ghostfolio.",
+            "comment": "Created by Ghostcompanion.",
             "createdAt": "2025-01-16T18:56:45.495Z",
             "currency": "USD",
             "id": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
@@ -194,7 +194,7 @@
     {
         "accountId": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
         "accountUserId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
-        "comment": "Activity created by Tastytrade-Ghostfolio.",
+        "comment": "Activity created by Ghostcompanion.",
         "createdAt": "2025-01-16T19:23:46.124Z",
         "currency": null,
         "date": "2021-10-13T00:00:00.000Z",
@@ -209,7 +209,7 @@
         "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
         "Account": {
             "balance": 0,
-            "comment": "Created by Tastytrade-Ghostfolio.",
+            "comment": "Created by Ghostcompanion.",
             "createdAt": "2025-01-16T18:56:45.495Z",
             "currency": "USD",
             "id": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
@@ -254,7 +254,7 @@
     {
         "accountId": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
         "accountUserId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
-        "comment": "Activity created by Tastytrade-Ghostfolio.",
+        "comment": "Activity created by Ghostcompanion.",
         "createdAt": "2025-01-16T19:23:46.129Z",
         "currency": null,
         "date": "2021-10-13T00:00:00.000Z",
@@ -269,7 +269,7 @@
         "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
         "Account": {
             "balance": 0,
-            "comment": "Created by Tastytrade-Ghostfolio.",
+            "comment": "Created by Ghostcompanion.",
             "createdAt": "2025-01-16T18:56:45.495Z",
             "currency": "USD",
             "id": "2a7efb1f-8f3c-43de-8778-f8488f1719d3",
@@ -324,3 +324,4 @@
         "valueInBaseCurrency": 100.765
     }
 ]
+
