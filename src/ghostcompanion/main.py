@@ -1,3 +1,6 @@
+import logging
+
+from ghostcompanion.configs.logging_config import configure_logging
 from ghostcompanion.configs.settings import Settings
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
@@ -29,6 +32,8 @@ from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
 from ghostcompanion.infra.tastytrade.tastytrade_api import TastytradeApi
 from ghostcompanion.repositories.symbol_mapping import SymbolMappingRepository
 
+logger = logging.getLogger(__name__)
+
 
 def _should_run_coinbase_importer() -> bool:
     if Settings.Coinbase.API_KEY and Settings.Coinbase.SECRET:
@@ -52,6 +57,9 @@ def _should_run_interactive_brokers_importer() -> bool:
 
 
 if __name__ == "__main__":
+    configure_logging(Settings.LOG_LEVEL)
+    logger.info("Starting Ghostcompanion")
+
     ghostfolio = GhostfolioAdapter(GhostfolioApi())
     symbol_mapping_repository = SymbolMappingRepository()
     export_portfolio = ExportPortfolio(ghostfolio)
@@ -80,12 +88,12 @@ if __name__ == "__main__":
         export_portfolio.execute(portfolio)
 
         # Import cash balances from Tastytrade
-        print("\n--- Importing Cash Balances ---")
+        logger.info("Starting cash balance import")
         import_cash_balances = ImportTastytradeCashBalances(
             tastytrade_provider, ghostfolio
         )
         import_cash_balances.execute()
-        print("--- Cash Balances Import Complete ---\n")
+        logger.info("Cash balance import complete")
 
     if _should_run_interactive_brokers_importer():
         interactive_brokers = InteractiveBrokersProvider(InteractiveBrokersApi())
@@ -97,4 +105,4 @@ if __name__ == "__main__":
         portfolio = import_interactive_brokers_transactions.execute()
         export_portfolio.execute(portfolio)
 
-    print("Done!")
+    logger.info("Done!")

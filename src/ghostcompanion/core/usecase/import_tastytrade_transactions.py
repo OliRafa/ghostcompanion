@@ -1,3 +1,5 @@
+import logging
+
 from ghostcompanion.core.entity.portfolio import Portfolio
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider
 from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
@@ -8,6 +10,8 @@ from ghostcompanion.repositories.symbol_mapping import (
     SymbolMappingRepository,
     SymbolMappingsNotFoundException,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ImportTastytradeTransactions:
@@ -27,10 +31,10 @@ class ImportTastytradeTransactions:
         ghostfolio_account = self.ghostfolio.get_or_create_account("Tastytrade")
         portfolio = Portfolio(ghostfolio_account)
 
-        print("Started getting all Tastytrade transactions...")
+        logger.info("Started getting all Tastytrade transactions")
         symbol_changes = self.tastytrade.get_symbol_changes()
         if symbol_changes:
-            print("Adapting symbol changes...")
+            logger.info("Adapting symbol changes")
             for change in symbol_changes:
                 trades = self.tastytrade.get_trades(change.old_symbol)
                 portfolio.add_asset(change.old_symbol, trades)
@@ -57,9 +61,9 @@ class ImportTastytradeTransactions:
                     portfolio.account.id, change.old_symbol
                 )
                 if outdated_orders:
-                    print(
+                    logger.info(
                         f'Deleting outdated orders for "{change.old_symbol}" '
-                        f'after changing to "{change.new_symbol}"...'
+                        f'after changing to "{change.new_symbol}"'
                     )
                     self.ghostfolio.delete_orders(outdated_orders)
 
@@ -80,15 +84,17 @@ class ImportTastytradeTransactions:
 
         stock_splits = self.tastytrade.get_splits()
         if stock_splits:
-            print("Handling stock splits...")
+            logger.info("Handling stock splits")
             portfolio.adapt_stock_splits(stock_splits)
 
         try:
             symbol_mappings = self.symbol_mapping_repository.get_symbol_mappings()
-            print("Handling symbol changes from mapping file...")
+            logger.info("Handling symbol changes from mapping file")
             portfolio.adapt_symbol_changes(symbol_mappings)
 
         except SymbolMappingsNotFoundException:
-            print("Skipping symbol changes from mapping file, as no file was found.")
+            logger.info(
+                "Skipping symbol changes from mapping file, as no file was found"
+            )
 
         return portfolio

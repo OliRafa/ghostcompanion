@@ -26,6 +26,7 @@ class TastytradeSettings:
 
 
 class Settings(GhostfolioSettings, TastytradeSettings):
+    LOG_LEVEL: str = getenv("LOG_LEVEL", "INFO")
     Coinbase = CoinbaseSettings
     Ghostfolio = GhostfolioSettings
     InteractiveBrokers = InteractiveBrokersSettings

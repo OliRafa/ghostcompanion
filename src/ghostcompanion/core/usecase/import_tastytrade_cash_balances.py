@@ -1,6 +1,10 @@
+import logging
+
 from ghostcompanion.core.entity.cash_balance import CashBalance
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+
+logger = logging.getLogger(__name__)
 
 
 class ImportTastytradeCashBalances:
@@ -53,7 +57,7 @@ class ImportTastytradeCashBalances:
 
         # Compare and update if different
         if self._should_update(current_balance, latest_balance):
-            print(
+            logger.info(
                 f"Updating cash balance: ${current_balance.amount} "
                 f"(previous: ${latest_balance.amount if latest_balance else 'None'})"
             )
@@ -63,7 +67,7 @@ class ImportTastytradeCashBalances:
                 current_balance.amount,
             )
         else:
-            print("Cash balance is already up to date")
+            logger.info("Cash balance is already up to date")
 
         return current_balance
 

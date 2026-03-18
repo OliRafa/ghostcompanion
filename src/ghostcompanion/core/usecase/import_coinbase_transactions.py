@@ -1,3 +1,4 @@
+import logging
 from typing import final
 
 from ghostcompanion.core.entity.portfolio import Portfolio
@@ -9,6 +10,8 @@ from ghostcompanion.repositories.symbol_mapping import (
     SymbolMappingRepository,
     SymbolMappingsNotFoundException,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @final
@@ -27,7 +30,7 @@ class ImportCoinbaseTransactions:
         ghostfolio_account = self.ghostfolio.get_or_create_account("Coinbase")
         portfolio = Portfolio(ghostfolio_account)
 
-        print("Started getting all Coinbase transactions...")
+        logger.info("Started getting all Coinbase transactions")
         coins = self.coinbase_provider.get_coins()
         for coin in coins:
             trades = self.coinbase_provider.get_trades(coin)
@@ -42,11 +45,13 @@ class ImportCoinbaseTransactions:
 
         try:
             symbol_mappings = self.symbol_mapping_repository.get_symbol_mappings()
-            print("Handling symbol changes from mapping file...")
+            logger.info("Handling symbol changes from mapping file")
             portfolio.adapt_symbol_changes(symbol_mappings)
 
         except SymbolMappingsNotFoundException:
-            print("Skipping symbol changes from mapping file, as no file was found.")
+            logger.info(
+                "Skipping symbol changes from mapping file, as no file was found"
+            )
 
         return portfolio
 

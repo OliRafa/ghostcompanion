@@ -1,8 +1,11 @@
+import logging
 from typing import final
 
 from ghostcompanion.core.entity.portfolio import Portfolio
 from ghostcompanion.core.entity.trade import Trade
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+
+logger = logging.getLogger(__name__)
 
 
 @final
@@ -11,7 +14,9 @@ class ExportPortfolio:
         self.ghostfolio = ghostfolio
 
     def execute(self, portfolio: Portfolio) -> None:
-        print(f"Started exporting {portfolio.account.name} activities to Ghostfolio...")
+        logger.info(
+            f"Started exporting {portfolio.account.name} activities to Ghostfolio"
+        )
         for symbol in portfolio.get_symbols():
             orders = self.ghostfolio.get_orders_by_symbol(portfolio.account.id, symbol)
 
@@ -26,14 +31,14 @@ class ExportPortfolio:
 
             outdated_orders = portfolio.get_absent_trades(symbol, orders)
             if outdated_orders:
-                print(f"Deleting outdated orders for `{symbol}`...")
+                logger.info(f"Deleting outdated orders for `{symbol}`")
                 self.ghostfolio.delete_orders(outdated_orders)
                 orders = [order for order in orders if order not in outdated_orders]
 
             if orders:
                 portfolio.delete_repeated_trades(symbol, orders)
 
-        print("Exporting new activities to Ghostfolio...")
+        logger.info("Exporting new activities to Ghostfolio")
         self.ghostfolio.export_portfolio(portfolio)
 
     @staticmethod

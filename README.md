@@ -74,6 +74,7 @@ Start by setting up the appropriate environment variables, listed below.
 | `IBKR_TOKEN`               | `string`            |                       | The _Interactive Brokers_ Flex Query Token.                                                                                                                                              |
 | `TASTYTRADE_CLIENT_SECRET` | `string`            |                       | The _Tastytrade_ Client Secret.                                                                                                                                              |
 | `TASTYTRADE_REFRESH_TOKEN` | `string`            |                       | The _Tastytrade_ Refresh Token.                                                                                                                                              |
+| `LOG_LEVEL`                | `string` (optional) | `INFO`                | Logging verbosity: DEBUG, INFO, WARNING, ERROR, or CRITICAL. |
 
 For how to generate the TastyTrade variables, please refer to [this documentation](https://tastyworks-api.readthedocs.io/en/latest/sessions.html).
 For how to generate the Interactive Brokers variables, please refer to

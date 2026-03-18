@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, final
@@ -8,6 +9,8 @@ from ghostcompanion.core.entity.portfolio import Portfolio
 from ghostcompanion.core.entity.trade import Trade
 from ghostcompanion.core.entity.transaction_type import TransactionType
 from ghostcompanion.core.ports.ghostfolio import GhostfolioPort
+
+logger = logging.getLogger(__name__)
 
 
 @final
@@ -28,7 +31,7 @@ class GhostfolioAdapter:
             return GhostfolioAccount(**account)
 
         except StopIteration:
-            print(f"Creating new `{name}` account in Ghostfolio...")
+            logger.info(f"Creating new `{name}` account in Ghostfolio")
             account_data = {
                 "balance": 0.0,
                 "comment": "Managed by Ghostcompanion.",
