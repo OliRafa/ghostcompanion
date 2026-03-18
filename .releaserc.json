@@ -14,10 +14,17 @@
         ],
         "@semantic-release/github",
         [
+            "@semantic-release/exec",
+            {
+                "prepareCmd": "sed -i \"s/^version = \\\"${lastRelease.version}\\\"/version = \\\"${nextRelease.version}\\\"/\" pyproject.toml"
+            }
+        ],
+        [
             "@semantic-release/git",
             {
                 "assets": [
-                    "CHANGELOG.md"
+                    "CHANGELOG.md",
+                    "pyproject.toml"
                 ],
                 "message": "chore(release): version ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
             }
