@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.3.0](https://github.com/OliRafa/ghostcompanion/compare/v2.2.0...v2.3.0) (2026-03-18)
+
+
+### Features
+
+* **logging:** replace print statements with proper logging infrastructure ([2d290e5](https://github.com/OliRafa/ghostcompanion/commit/2d290e5f4770110fc0382b8d66e88fbaa5bc62d0))
+
 # [2.2.0](https://github.com/OliRafa/ghostcompanion/compare/v2.1.0...v2.2.0) (2026-03-18)
 
 
