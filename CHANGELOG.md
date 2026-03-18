@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.2.0](https://github.com/OliRafa/ghostcompanion/compare/v2.1.0...v2.2.0) (2026-03-18)
+
+
+### Features
+
+* **cash-balance:** implement current cash balance import from Tastytrade ([b331c60](https://github.com/OliRafa/ghostcompanion/commit/b331c60cc296c36000c48c30bc9b50956cebec98)), closes [#19](https://github.com/OliRafa/ghostcompanion/issues/19)
+* **logging:** replace print statements with proper logging infrastructure ([2d290e5](https://github.com/OliRafa/ghostcompanion/commit/2d290e5f4770110fc0382b8d66e88fbaa5bc62d0))
+
 # [2.1.0](https://github.com/OliRafa/ghostcompanion/compare/v2.0.1...v2.1.0) (2025-12-30)
 
 
