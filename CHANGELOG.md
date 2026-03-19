@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.5.0](https://github.com/OliRafa/ghostcompanion/compare/v2.4.0...v2.5.0) (2026-03-19)
+
+
+### Features
+
+* **coinbase-cash-balance:** implement cash balance import for Coinbase ([63a6424](https://github.com/OliRafa/ghostcompanion/commit/63a6424f5ee1ef071ce0c64eebbdb8ff2b2d9cc1))
+
 # [2.4.0](https://github.com/OliRafa/ghostcompanion/compare/v2.3.0...v2.4.0) (2026-03-19)
 
 
