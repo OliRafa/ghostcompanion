@@ -6,6 +6,9 @@ from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider
 from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
+from ghostcompanion.core.usecase.import_coinbase_cash_balances import (
+    ImportCoinbaseCashBalances,
+)
 from ghostcompanion.core.usecase.import_coinbase_transactions import (
     ImportCoinbaseTransactions,
 )
@@ -75,6 +78,12 @@ if __name__ == "__main__":
 
         portfolio = import_coinbase_transactions.execute()
         export_portfolio.execute(portfolio)
+
+        # Import cash balances from Coinbase
+        logger.info("Starting Coinbase cash balance import")
+        import_coinbase_cash = ImportCoinbaseCashBalances(coinbase_provider, ghostfolio)
+        import_coinbase_cash.execute()
+        logger.info("Coinbase cash balance import complete")
 
     if _should_run_tastytrade_importer():
         tastytrade_api = TastytradeAdapter(TastytradeApi())

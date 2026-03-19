@@ -1,5 +1,6 @@
 import secrets
 import time
+from decimal import Decimal
 from typing import Any
 
 import jwt
@@ -13,6 +14,32 @@ from ghostcompanion.core.ports.coinbase import CoinbasePort
 class CoinbaseApi(CoinbasePort):
     def __init__(self) -> None:
         self.COINBASE_API_URL = "api.coinbase.com"
+
+    def get_current_cash_balance(self, currency: str) -> Decimal:
+        """Get cash balance for specific fiat currency.
+
+        Returns the balance from fiat accounts matching the specified currency.
+        Only includes accounts with type='fiat' and matching currency code.
+
+        Args:
+            currency: The currency code to filter by (e.g., 'USD', 'EUR')
+
+        Returns:
+            Decimal: Total balance across all matching fiat accounts
+        """
+        accounts = self.get_accounts()
+        total_balance = Decimal("0")
+
+        for account in accounts:
+            # Must be fiat type
+            if account.get("type") == "fiat":
+                account_currency = account.get("currency", {}).get("code", "")
+                # Must match requested currency
+                if account_currency == currency:
+                    balance = account.get("balance", {}).get("amount", "0")
+                    total_balance += Decimal(balance)
+
+        return total_balance
 
     def get_accounts(self) -> list[dict[str, Any]]:
         resource = "v2/accounts"

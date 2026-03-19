@@ -1,7 +1,8 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any, Iterable
 
+from ghostcompanion.core.entity.cash_balance import CashBalance
 from ghostcompanion.core.entity.trade import Trade
 from ghostcompanion.core.entity.transaction_type import TransactionType
 from ghostcompanion.core.ports.coinbase import CoinbasePort
@@ -146,3 +147,20 @@ class CoinbaseProvider:
             transaction_type=TransactionType[transaction_type.upper()],
             value=abs(Decimal(transaction["native_amount"]["amount"])),
         )
+
+    # Cash Balance Methods
+
+    def get_current_cash_balance(self, currency: str = "USD") -> CashBalance:
+        """Get the current cash balance from Coinbase account.
+
+        Returns a single CashBalance with today's date and the current
+        cash amount from fiat accounts matching the specified currency.
+
+        Args:
+            currency: The account currency (default "USD")
+
+        Returns:
+            CashBalance with today's date and current cash amount
+        """
+        cash_amount = self.coinbase_api.get_current_cash_balance(currency)
+        return CashBalance(date=date.today(), amount=cash_amount, currency=currency)

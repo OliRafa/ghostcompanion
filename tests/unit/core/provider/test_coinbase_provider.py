@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from pytest import fixture
@@ -127,3 +127,34 @@ class TestGetTrades(CoinbaseProviderFactory):
         assert all(trade.value == Decimal("0") for trade in network_fees)
 
         assert network_fees[0].quantity == Decimal("0.00001790")
+
+
+class TestGetCurrentCashBalance(CoinbaseProviderFactory):
+    def should_return_cash_balance_with_default_currency(self):
+        result = self.coinbase_provider.get_current_cash_balance()
+
+        assert result.currency == "USD"
+        assert result.date == date.today()
+
+    def should_use_provided_currency(self):
+        result = self.coinbase_provider.get_current_cash_balance("EUR")
+
+        assert result.currency == "EUR"
+
+    def should_return_cash_balance_from_api(self):
+        # Default cash balance is 1000.00 in InMemoryCoinbaseApi
+        result = self.coinbase_provider.get_current_cash_balance()
+
+        assert result.amount == Decimal("1000.00")
+
+    def should_handle_zero_balance(self):
+        self.coinbase_provider.coinbase_api.set_cash_balance(Decimal("0"))
+        result = self.coinbase_provider.get_current_cash_balance()
+
+        assert result.amount == Decimal("0")
+
+    def should_handle_negative_balance(self):
+        self.coinbase_provider.coinbase_api.set_cash_balance(Decimal("-500.00"))
+        result = self.coinbase_provider.get_current_cash_balance()
+
+        assert result.amount == Decimal("-500.00")
