@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.4.0](https://github.com/OliRafa/ghostcompanion/compare/v2.3.0...v2.4.0) (2026-03-19)
+
+
+### Features
+
+* **ibkr-cash-balance:** implement cash balance import for Interactive Brokers ([2493cd5](https://github.com/OliRafa/ghostcompanion/commit/2493cd5b8e8f3b6c484352abbd1b3a3a11bee111))
+
 # [2.3.0](https://github.com/OliRafa/ghostcompanion/compare/v2.2.0...v2.3.0) (2026-03-18)
 
 
