@@ -1,3 +1,6 @@
+from datetime import date
+from decimal import Decimal
+
 from pytest import fixture
 
 from ghostcompanion.core.entity.transaction_type import TransactionType
@@ -91,3 +94,38 @@ class TestGetTrades(TastytradeAdapterFactory):
         trade = trades[0]
 
         assert trade.executed_at.tzinfo
+
+
+class TestGetCurrentCashBalance(TastytradeAdapterFactory):
+    def should_return_cash_balance_with_default_currency(self):
+        result = self.interactive_brokers_provider.get_current_cash_balance()
+
+        assert result.currency == "USD"
+        assert result.date == date.today()
+
+    def should_use_provided_currency(self):
+        result = self.interactive_brokers_provider.get_current_cash_balance("EUR")
+
+        assert result.currency == "EUR"
+
+    def should_return_cash_balance_from_api(self):
+        # Default cash balance is 5000.00 in InMemoryInteractiveBrokersApi
+        result = self.interactive_brokers_provider.get_current_cash_balance()
+
+        assert result.amount == Decimal("5000.00")
+
+    def should_handle_zero_balance(self):
+        self.interactive_brokers_provider.interactive_brokers_api.set_cash_balance(
+            Decimal("0")
+        )
+        result = self.interactive_brokers_provider.get_current_cash_balance()
+
+        assert result.amount == Decimal("0")
+
+    def should_handle_negative_balance(self):
+        self.interactive_brokers_provider.interactive_brokers_api.set_cash_balance(
+            Decimal("-500.00")
+        )
+        result = self.interactive_brokers_provider.get_current_cash_balance()
+
+        assert result.amount == Decimal("-500.00")

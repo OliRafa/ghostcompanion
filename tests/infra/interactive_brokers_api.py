@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import final, override
 
 from ibflex import AssetClass, ChangeInDividendAccrual, Trade
@@ -8,9 +9,23 @@ from tests.resources.interactive_brokers import DIVIDENDS, TRADES
 
 @final
 class InMemoryInteractiveBrokersApi(InteractiveBrokersPort):
-    def __init__(self, trades: list[Trade] = TRADES) -> None:
+    def __init__(
+        self,
+        trades: list[Trade] = TRADES,
+        cash_balance: Decimal = Decimal("5000.00"),
+    ) -> None:
         self.__trades = trades
         self.__dividends = DIVIDENDS
+        self._cash_balance = cash_balance
+
+    def set_cash_balance(self, balance: Decimal) -> None:
+        """Set the current cash balance for testing."""
+        self._cash_balance = balance
+
+    @override
+    def get_current_cash_balance(self) -> Decimal:
+        """Return the current cash balance for testing."""
+        return self._cash_balance
 
     @override
     def get_dividends_by_symbol(self, symbol: str) -> list[ChangeInDividendAccrual]:

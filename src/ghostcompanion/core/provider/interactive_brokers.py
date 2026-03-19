@@ -1,11 +1,12 @@
 from collections.abc import Iterable
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from itertools import chain
 from typing import final
 
 import ibflex
 
+from ghostcompanion.core.entity.cash_balance import CashBalance
 from ghostcompanion.core.entity.trade import Trade
 from ghostcompanion.core.entity.transaction_type import TransactionType
 from ghostcompanion.core.ports.interactive_brokers import InteractiveBrokersPort
@@ -111,3 +112,20 @@ class InteractiveBrokersProvider:
         dividends: Iterable[ibflex.ChangeInDividendAccrual],
     ) -> Iterable[ibflex.ChangeInDividendAccrual]:
         return filter(lambda x: x.code[0] == ibflex.Code.POSTACCRUAL, dividends)
+
+    # Cash Balance Methods
+
+    def get_current_cash_balance(self, currency: str = "USD") -> CashBalance:
+        """Get the current cash balance from Interactive Brokers account.
+
+        Returns a single CashBalance with today's date and the current
+        cash amount from the provider.
+
+        Args:
+            currency: The account currency (default "USD")
+
+        Returns:
+            CashBalance with today's date and current cash amount
+        """
+        cash_amount = self.interactive_brokers_api.get_current_cash_balance()
+        return CashBalance(date=date.today(), amount=cash_amount, currency=currency)

@@ -9,6 +9,9 @@ from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
 from ghostcompanion.core.usecase.import_coinbase_transactions import (
     ImportCoinbaseTransactions,
 )
+from ghostcompanion.core.usecase.import_interactive_brokers_cash_balances import (
+    ImportInteractiveBrokersCashBalances,
+)
 from ghostcompanion.core.usecase.import_interactive_brokers_transactions import (
     ImportInteractiveBrokersTransactions,
 )
@@ -104,5 +107,13 @@ if __name__ == "__main__":
 
         portfolio = import_interactive_brokers_transactions.execute()
         export_portfolio.execute(portfolio)
+
+        # Import cash balances from Interactive Brokers
+        logger.info("Starting Interactive Brokers cash balance import")
+        import_ibkr_cash = ImportInteractiveBrokersCashBalances(
+            interactive_brokers, ghostfolio
+        )
+        import_ibkr_cash.execute()
+        logger.info("Interactive Brokers cash balance import complete")
 
     logger.info("Done!")
