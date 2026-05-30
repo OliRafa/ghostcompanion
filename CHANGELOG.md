@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.1](https://github.com/OliRafa/ghostcompanion/compare/v2.5.0...v2.5.1) (2026-05-30)
+
+
+### Bug Fixes
+
+* **ghostfolio:** use /activities endpoint after v3 dropped /order alias ([929452b](https://github.com/OliRafa/ghostcompanion/commit/929452b16a4628f95b7293df14322f94041308a8))
+
 # [2.5.0](https://github.com/OliRafa/ghostcompanion/compare/v2.4.0...v2.5.0) (2026-03-19)
 
 
