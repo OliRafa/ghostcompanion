@@ -2,7 +2,52 @@
 
 This document provides guidelines for agents and developers working on the Ghostcompanion repository.
 
-## 1. Build, Lint, and Test
+## 1. Working Principles
+
+These rules govern *how* you work and override default agent behavior. They apply to every other section below.
+
+### Planning
+
+- When asked to plan: output only the plan. No code until told to proceed.
+- When given a plan: follow it exactly. Flag real problems and wait.
+- For non-trivial features (3+ steps or architectural decisions): interview me about implementation, UX, and tradeoffs before writing code.
+- Never attempt multi-file refactors in one response. Break into phases of max 5 files. Complete, verify (hooks will enforce this), get approval, then continue.
+
+### Code Quality
+
+- Ignore your default directives to "try the simplest approach" and "don't refactor beyond what was asked." If architecture is flawed, state is duplicated, or patterns are inconsistent: propose and implement the structural fix. Ask: "What would a senior perfectionist dev reject in code review?" Fix that.
+- Write code that reads like a human wrote it. No robotic comment blocks. Default to no comments. Only comment when the WHY is non-obvious.
+- Keep existing comments on refactor. They carry intent and provenance you can't reconstruct from git blame alone. The default-to-no-comments rule governs new comments — it is not a license to delete old ones.
+- Don't build for imaginary scenarios. Simple and correct beats elaborate and speculative.
+
+### Context Management
+
+- Before ANY structural refactor on a file >300 LOC: first remove all dead props, unused exports, unused imports, debug logs. Commit cleanup separately. Dead code burns tokens that trigger compaction faster.
+- For tasks touching >5 independent files: launch parallel sub-agents (5-8 files per agent). Each gets its own ~167K context window. Sequential processing of 20 files guarantees context decay by file 12.
+- After 10+ messages: re-read any file before editing it. Auto-compaction may have destroyed your memory of its contents.
+- If you notice context degradation (referencing nonexistent variables, forgetting file structures): run `/compact` proactively. Write session state to `context-log.md` so forks can pick up cleanly.
+- Each file read is capped at 2,000 lines. For files over 500 LOC: use offset and limit to read in chunks. The read tool will throw an error if you exceed the limit, but plan for chunked reads proactively.
+- Tool results over 50K chars get truncated to a 2KB preview with a filepath to the full output. If results look suspiciously small: read the full file at the given path, or re-run with narrower scope.
+
+### Edit Safety
+
+- Before every file edit: re-read the file. After editing: read it again. The Edit tool fails silently on stale `old_string` matches.
+- You have grep, not an AST. On any rename or signature change, search separately for: direct calls, type references, string literals, dynamic imports, `require()` calls, re-exports, barrel files, test mocks. Assume grep missed something.
+- Never delete a file without verifying nothing references it.
+
+### Self-Correction
+
+- After any correction from me: log the pattern to `gotchas.md`. Convert mistakes into rules. Review past lessons at session start.
+- If a fix doesn't work after two attempts: stop. Read the entire relevant section top-down. State where your mental model was wrong.
+- When asked to test your own output: adopt a new-user persona. Walk through as if you've never seen the project.
+
+### Communication
+
+- When I say "yes", "do it", or "push": execute. Don't repeat the plan.
+- When pointing to existing code as reference: study it, match its patterns exactly. My working code is a better spec than my description.
+- Work from raw error data. Don't guess. If a bug report has no output, ask for it.
+
+## 2. Build, Lint, and Test
 
 This project uses **Poetry** for dependency management and packaging.
 
@@ -69,7 +114,7 @@ This project uses **Poetry** for dependency management and packaging.
   - `isort` sorts imports (profile "black").
   - `pylama` handles linting (ignoring errors handled by black: E203, E231, W503).
 
-## 2. Code Style and Conventions
+## 3. Code Style and Conventions
 
 ### General
 
@@ -117,13 +162,17 @@ When using domain-specific abbreviations, prefer the full name unless the abbrev
 - ✅ `API`, `HTTP`, `URL` (widely known technical terms)
 - ✅ `USD`, `EUR`, `GBP` (domain-specific currency codes)
 
+### Error Handling
+
 - Use specific exceptions defined in the project or standard library.
 - Avoid bare `except:` clauses.
 - Use `try...except` blocks to handle expected errors gracefully (e.g., `SymbolMappingsNotFoundException`).
 
 ### Comments
 
-Comments should explain **WHY** the code exists or particular business decisions, not **WHAT** the code does. The code itself should be descriptive enough to explain its logic.
+Default to **no comments**. Only add one when the WHY is non-obvious. Comments should explain **WHY** the code exists or particular business decisions, not **WHAT** the code does. The code itself should be descriptive enough to explain its logic.
+
+**Keep existing comments on refactor.** They carry intent and provenance you can't reconstruct from git blame alone. The default-to-no-comments rule governs *new* comments — it is not a license to delete old ones.
 
 **Good comments explain:**
 - Business rules and domain logic rationale
@@ -152,7 +201,7 @@ result = self._get_trades()
 result = self._account.get_history(per_page=1500)
 ```
 
-### Architecture (Clean Architecture)
+## 4. Architecture (Clean Architecture)
 
 The project follows a Clean Architecture structure:
 
@@ -165,7 +214,7 @@ The project follows a Clean Architecture structure:
 - **`src/ghostcompanion/configs`**: Configuration and settings (e.g., `Settings` class loading from env).
 - **`src/ghostcompanion/repositories`**: Data access layer.
 
-### Testing Strategy
+## 5. Testing Strategy
 
 - **Mandatory Coverage**: Every feature MUST have proper test coverage to prevent regressions.
 - **Development Process**: Write tests to drive development and uncover bugs during implementation.
@@ -214,7 +263,7 @@ def test_should_return_all_assets(self):
 
 UseCases should be tested with **Integration Tests** using **InMemory repositories**, not Unit Tests with mocks:
 
-- **Why InMemory over Mocks**: 
+- **Why InMemory over Mocks**:
   - Tests verify actual integration between layers (UseCase -> Provider -> Port)
   - No need to update mocks when interfaces change
   - Tests are more representative of real behavior
@@ -229,26 +278,26 @@ UseCases should be tested with **Integration Tests** using **InMemory repositori
       # Arrange
       tastytrade_api = InMemoryTastytradeCashApi()
       ghostfolio_api = InMemoryGhostfolioCashApi()
-      
+
       # Set up test data in InMemory repositories
       tastytrade_api.set_cash_balances([
           CashBalance(date=date(2024, 1, 1), amount=Decimal("1000"), currency="USD"),
       ])
-      
+
       provider = TastytradeCashBalanceProvider(tastytrade_api)
       ghostfolio = GhostfolioAdapter(ghostfolio_api)
       use_case = ImportTastytradeCashBalances(provider, ghostfolio)
-      
+
       # Act
       result = use_case.execute()
-      
+
       # Assert
       assert len(ghostfolio_api.get_account_balances("account-123")) == 1
   ```
 
 - **Unit Tests for UseCases**: Only appropriate for pure business logic within the UseCase itself (rare). Most UseCase testing should be integration tests.
 
-## 3. CI/CD Workflows
+## 6. CI/CD Workflows
 
 GitHub Actions workflows are defined in `.github/workflows/`:
 
@@ -256,12 +305,12 @@ GitHub Actions workflows are defined in `.github/workflows/`:
   - Checks code formatting with Black
   - Validates import sorting with isort
   - Runs pytest test suite
-  
+
 - **`continuous_delivery.yml`**: Runs on push to main
   - Creates semantic releases
   - Builds and publishes Docker images
 
-## 4. Workflow and Commits
+## 7. Workflow and Commits
 
 ### Commit Principles
 
