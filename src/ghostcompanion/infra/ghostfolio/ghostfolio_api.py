@@ -66,7 +66,7 @@ class GhostfolioApi(GhostfolioPort):
                 query_parameters = None
 
             response = requests.get(
-                f"{GhostfolioSettings.BASE_URL}/order",
+                f"{GhostfolioSettings.BASE_URL}/activities",
                 headers=self.AUTHORIZATION_HEADER,
                 params=query_parameters,
             )
@@ -159,7 +159,7 @@ class GhostfolioApi(GhostfolioPort):
 
     def delete_order_by_id(self, order_id: str):
         response = requests.delete(
-            f"{GhostfolioSettings.BASE_URL}/order/{order_id}",
+            f"{GhostfolioSettings.BASE_URL}/activities/{order_id}",
             headers=self.AUTHORIZATION_HEADER,
         )
 
