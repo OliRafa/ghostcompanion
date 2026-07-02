@@ -78,8 +78,6 @@ class TestAdaptSymbolChanges(PortfolioFactory):
         change = SymbolChange(old_symbol="NOTASTOCK", new_symbol="NEWSTOCK")
         self.portfolio.adapt_symbol_changes([change])
 
-        results = self.portfolio.get_symbols()
-
         assert self.portfolio.has_asset(change.old_symbol) is False
         assert self.portfolio.has_asset(change.new_symbol) is False
 

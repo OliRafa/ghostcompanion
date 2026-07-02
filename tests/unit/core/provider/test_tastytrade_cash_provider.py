@@ -3,8 +3,6 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import MagicMock
 
-import pytest
-
 from ghostcompanion.core.entity.cash_balance import CashBalance
 from ghostcompanion.core.ports.tastytrade import TastytradePort
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider

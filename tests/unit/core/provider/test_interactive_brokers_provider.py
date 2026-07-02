@@ -59,7 +59,7 @@ class TestGetTrades(TastytradeAdapterFactory):
             for trade in trades
         )
 
-    def when_theres_cancel_trade_followed_by_completed_trade_should_return_correct_trade(
+    def when_cancel_trade_followed_by_completed_should_return_correct_trade(
         self,
     ):
         self.interactive_brokers_provider.interactive_brokers_api = (

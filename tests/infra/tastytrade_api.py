@@ -27,7 +27,7 @@ class InMemoryTastytradeApi(TastytradePort):
 
 
 class InMemoryTastytradeApiWithExtraTransaction(TastytradePort):
-    """In-memory mock that includes an extra non-trade transaction for testing filtering"""
+    """In-memory mock with an extra non-trade transaction for filter testing."""
 
     def __init__(self, current_cash_balance: Decimal = Decimal("1000.00")):
         # Copy existing transactions and add a non-trade entry
@@ -62,7 +62,7 @@ class InMemoryTastytradeApiWithExtraTransaction(TastytradePort):
 
 
 class InMemoryTastytradeApiWithDividendOnlyAsset(TastytradePort):
-    """In-memory mock that includes a dividend-only asset (no trades) for testing asset detection"""
+    """In-memory mock with a dividend-only asset (no trades) for asset detection."""
 
     def __init__(self, current_cash_balance: Decimal = Decimal("1000.00")):
         # Copy existing transactions and add a dividend-only entry

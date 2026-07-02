@@ -23,8 +23,9 @@ class ExportPortfolio:
             if portfolio.account.name == "Interactive Brokers":
                 # At the moment, IBKR trades are being imported from FlexQueries.
                 # These files have trades from at most 365 days old.
-                # When deleting outdated orders, we shouldn't delete orders older than that,
-                # because we won't add them again based on the importer.
+                # When deleting outdated orders, we shouldn't delete orders
+                # older than that, because we won't add them again based on
+                # the importer.
                 orders = self._filter_ghostfolio_orders_older_than_oldest_asset_trade(
                     portfolio, symbol, orders
                 )

@@ -34,7 +34,8 @@ class ImportInteractiveBrokersCashBalances:
         Execute the cash balance import and synchronization.
 
         Args:
-            account_name: The name of the Ghostfolio account (default "Interactive Brokers")
+            account_name: The name of the Ghostfolio account
+                (default "Interactive Brokers")
 
         Returns:
             CashBalance: The current cash balance from the provider

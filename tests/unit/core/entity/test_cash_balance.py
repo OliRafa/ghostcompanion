@@ -60,7 +60,8 @@ class TestCashBalanceComparison:
             date=date(2024, 1, 1), amount=Decimal("800.00"), currency="USD"
         )
 
-        # Same date, different amounts - should be equal (frozen dataclass compares all fields)
+        # Same date, different amounts - should be equal
+        # (frozen dataclass compares all fields)
         assert balance1 != balance3
         # Different dates - should not be equal
         assert balance1 != balance2

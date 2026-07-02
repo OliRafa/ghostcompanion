@@ -7,7 +7,7 @@ from ibflex import ChangeInDividendAccrual, Trade
 class InteractiveBrokersPort(ABC):
     @abstractmethod
     def get_current_cash_balance(self) -> Decimal:
-        """Returns the current cash balance (total ending cash across all currencies)."""
+        """Return the total ending cash across all currencies."""
         ...
 
     @abstractmethod

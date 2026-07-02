@@ -59,7 +59,7 @@ class TestGetAssets(TastytradeProviderFactory):
         assert len(results) == 3
 
     def when_theres_additional_history_entries_should_return_only_existing_assets(self):
-        """When there are non-trade history entries, only assets with trades/dividends should be returned"""
+        """Only assets with trades or dividends are returned, ignoring others."""
         provider = TastytradeProvider(InMemoryTastytradeApiWithExtraTransaction())
         results = provider.get_assets()
 

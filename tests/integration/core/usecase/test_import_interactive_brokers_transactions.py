@@ -14,7 +14,7 @@ from tests.infra.symbol_mapping_repository import InMemorySymbolMappingRepositor
 class ImportInteractiveBrokersTransactionsFactory:
     @fixture(autouse=True)
     def initialize_import_interactive_brokers_transactions(self):
-        self.import_interactive_brokers_transactions: ImportInteractiveBrokersTransactions = ImportInteractiveBrokersTransactions(
+        self.import_transactions = ImportInteractiveBrokersTransactions(
             InteractiveBrokersProvider(InMemoryInteractiveBrokersApi()),
             GhostfolioAdapter(InMemoryGhostfolioApi()),
             InMemorySymbolMappingRepository(),
@@ -25,12 +25,12 @@ class TestImportInteractiveBrokersTransactions(
     ImportInteractiveBrokersTransactionsFactory
 ):
     def should_add_assets_to_portfolio(self):
-        portfolio = self.import_interactive_brokers_transactions.execute()
+        portfolio = self.import_transactions.execute()
 
         assert portfolio.get_symbols()
 
     def should_use_yahoo_as_data_source(self):
-        portfolio = self.import_interactive_brokers_transactions.execute()
+        portfolio = self.import_transactions.execute()
 
         trades = portfolio.get_trades("STOCKA")
 
@@ -40,20 +40,18 @@ class TestImportInteractiveBrokersTransactions(
         symbol_mapping_repository = InMemorySymbolMappingRepository(
             [SymbolChange(old_symbol="STOCKA", new_symbol="NEWSTOCKA")]
         )
-        self.import_interactive_brokers_transactions.symbol_mapping_repository = (
-            symbol_mapping_repository
-        )
+        self.import_transactions.symbol_mapping_repository = symbol_mapping_repository
 
-        portfolio = self.import_interactive_brokers_transactions.execute()
+        portfolio = self.import_transactions.execute()
 
         assert portfolio.has_asset("NEWSTOCKA") is True
 
     def when_theres_forex_trade_should_not_include_it_in_assets(self):
-        portfolio = self.import_interactive_brokers_transactions.execute()
+        portfolio = self.import_transactions.execute()
 
         assert portfolio.has_asset("FOREX") is False
 
     def should_include_dividends(self):
-        portfolio = self.import_interactive_brokers_transactions.execute()
+        portfolio = self.import_transactions.execute()
 
         assert portfolio.get_dividends("STOCKA")

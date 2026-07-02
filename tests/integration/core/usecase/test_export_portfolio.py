@@ -22,7 +22,7 @@ class ExportPortfolioFactory:
         self.ghostfolio_adapter: GhostfolioAdapter = GhostfolioAdapter(
             InMemoryGhostfolioApi()
         )
-        self.import_interactive_brokers_transactions: ImportInteractiveBrokersTransactions = ImportInteractiveBrokersTransactions(
+        self.import_transactions = ImportInteractiveBrokersTransactions(
             InteractiveBrokersProvider(InMemoryInteractiveBrokersApi()),
             self.ghostfolio_adapter,
             InMemorySymbolMappingRepository(),
@@ -33,7 +33,7 @@ class ExportPortfolioFactory:
 
 
 class TestExportPortfolio(ExportPortfolioFactory):
-    def when_deleting_outdated_orders_from_ibkr_should_not_delete_older_than_oldest_trade(
+    def when_deleting_ibkr_orders_should_not_delete_older_than_oldest_trade(
         self,
     ):
         """At the moment, IBKR trades are being imported from FlexQueries.
@@ -41,14 +41,14 @@ class TestExportPortfolio(ExportPortfolioFactory):
         When deleting outdated trades, we shouldn't delete trades older than that,
         because we won't add them again based on the importer.
         """
-        legacy_portfolio = self.import_interactive_brokers_transactions.execute()
+        legacy_portfolio = self.import_transactions.execute()
         trades = legacy_portfolio.get_trades("STOCKA")
         for trade in trades:
             trade.executed_at = trade.executed_at - timedelta(days=365)
 
         self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
 
-        portfolio = self.import_interactive_brokers_transactions.execute()
+        portfolio = self.import_transactions.execute()
         self.export_portfolio.execute(portfolio)
 
         orders = self.ghostfolio_adapter.get_orders_by_symbol(
@@ -64,7 +64,7 @@ class TestExportPortfolio(ExportPortfolioFactory):
         assert any(order.executed_at.year == 2025 for order in orders)
 
     def when_order_already_exists_in_ghostfolio_should_not_insert_it_again(self):
-        legacy_portfolio = self.import_interactive_brokers_transactions.execute()
+        legacy_portfolio = self.import_transactions.execute()
         legacy_portfolio = deepcopy(legacy_portfolio)
         trades = legacy_portfolio.get_trades("STOCKA")
         for trade in trades:
@@ -76,7 +76,7 @@ class TestExportPortfolio(ExportPortfolioFactory):
 
         self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
 
-        portfolio = self.import_interactive_brokers_transactions.execute()
+        portfolio = self.import_transactions.execute()
         self.export_portfolio.execute(portfolio)
 
         orders = self.ghostfolio_adapter.get_orders_by_symbol(
@@ -87,7 +87,7 @@ class TestExportPortfolio(ExportPortfolioFactory):
     def when_ghostfolio_has_trade_and_api_has_not_should_delete_it_from_ghostfolio(
         self,
     ):
-        legacy_portfolio = self.import_interactive_brokers_transactions.execute()
+        legacy_portfolio = self.import_transactions.execute()
         legacy_portfolio = deepcopy(legacy_portfolio)
         trades = legacy_portfolio.get_trades("STOCKA")
         another_trade = deepcopy(trades[0])
@@ -97,7 +97,7 @@ class TestExportPortfolio(ExportPortfolioFactory):
 
         self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
 
-        portfolio = self.import_interactive_brokers_transactions.execute()
+        portfolio = self.import_transactions.execute()
         self.export_portfolio.execute(portfolio)
 
         orders = self.ghostfolio_adapter.get_orders_by_symbol(

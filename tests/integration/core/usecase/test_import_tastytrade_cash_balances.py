@@ -55,7 +55,7 @@ class TestImportTastytradeCashBalances:
         assert ghostfolio_balances[0]["value"] == 1500.0
 
     def should_update_balance_when_value_differs(self) -> None:
-        """When provider value differs from latest Ghostfolio balance, create new entry."""
+        """Create a new entry when the provider value differs from Ghostfolio."""
         # Arrange - First create an initial balance
         self.tastytrade_api.set_current_cash_balance(Decimal("1000.00"))
         use_case = ImportTastytradeCashBalances(
