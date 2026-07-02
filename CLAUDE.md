@@ -4,6 +4,21 @@ This document provides guidelines for agents and developers working on the Ghost
 
 ## 1. Working Principles
 
+### Caveman
+
+Be concise, respont terse like a smark caveman. All technical substance stay. Only fluff die.
+
+Rules:
+Drop: filler (just/really/basically), plesantries, hedging.
+Fragments OK. Short synonyms. Technical terms exact. Code unchanged.
+Patter: [thing] [action] [reason]. [next step].
+Not: "Sure! I'd happy to help you with that."
+Yes: "Big in auth middleware. Fix:"
+
+Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused, or when user explicitly asks to.
+Resume after.
+Boundaries: code/commits/PRs written normal.
+
 These rules govern *how* you work and override default agent behavior. They apply to every other section below.
 
 ### Planning
@@ -147,11 +162,13 @@ This project uses **Poetry** for dependency management and packaging.
 ### Abbreviations
 
 Avoid abbreviations in code unless they are:
+
 1. **Widely known** (e.g., `API`, `HTTP`, `URL`, `ID`)
 2. **Domain-specific** (e.g., `USD`, `EUR`, `GBP` for currency codes)
 3. **Standard conventions** (e.g., `i`, `j`, `k` for loop indices)
 
 When using domain-specific abbreviations, prefer the full name unless the abbreviation is universally understood in that domain. Examples:
+
 - ✅ `transaction` (not `tx`)
 - ✅ `balance` (not `bal`)
 - ✅ `currency` (not `curr`)
@@ -175,12 +192,14 @@ Default to **no comments**. Only add one when the WHY is non-obvious. Comments s
 **Keep existing comments on refactor.** They carry intent and provenance you can't reconstruct from git blame alone. The default-to-no-comments rule governs *new* comments — it is not a license to delete old ones.
 
 **Good comments explain:**
+
 - Business rules and domain logic rationale
 - Non-obvious side effects or consequences
 - Workarounds for external system limitations
 - References to external documentation or requirements
 
 **Avoid comments that:**
+
 - Describe obvious code behavior
 - Explain what the next line does when the code is clear
 - Redundantly describe what type hints already show
@@ -189,12 +208,14 @@ Default to **no comments**. Only add one when the WHY is non-obvious. Comments s
 **Examples:**
 
 ❌ Bad - Explains obvious code:
+
 ```python
 # Get the trades
 result = self._get_trades()
 ```
 
 ✅ Good - Explains business logic:
+
 ```python
 # Tastytrade SDK pagination bug: only returns first page
 # per_page=1500 is workaround until upstream fix
@@ -272,6 +293,7 @@ UseCases should be tested with **Integration Tests** using **InMemory repositori
 - **Test Location**: Place UseCase integration tests in `tests/integration/core/usecase/`
 
 - **Implementation Pattern**:
+
   ```python
   # In tests/integration/core/usecase/test_import_cash_balances.py
   def test_should_synchronize_cash_balances():
@@ -315,12 +337,14 @@ GitHub Actions workflows are defined in `.github/workflows/`:
 ### Commit Principles
 
 Commits should be **small, self-contained units of work** that:
+
 - ✅ Always leave the codebase in a working state
 - ✅ Can be easily rolled back if needed
 - ✅ Focus on a single logical change
 - ✅ Include all related changes (code, tests, docs) in one commit
 
 **Guidelines:**
+
 - Avoid mixing unrelated changes in a single commit
 - Each commit should pass all tests on its own
 - If a commit introduces a bug, it should be easy to revert without affecting other functionality
