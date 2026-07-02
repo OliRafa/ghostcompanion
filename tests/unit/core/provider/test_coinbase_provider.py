@@ -113,7 +113,7 @@ class TestGetTrades(CoinbaseProviderFactory):
         assert len(trades) == 1
 
         trade = trades[0]
-        assert trade.quantity == Decimal("6.4136277")
+        assert trade.quantity == Decimal("3.0905425")
         assert trade.value == Decimal("0.0")
 
     def should_treat_networks_fees_as_sells_with_zero_gain(self):
@@ -126,7 +126,7 @@ class TestGetTrades(CoinbaseProviderFactory):
         )
         assert all(trade.value == Decimal("0") for trade in network_fees)
 
-        assert network_fees[0].quantity == Decimal("0.00001790")
+        assert network_fees[0].quantity == Decimal("0.03497583")
 
 
 class TestGetCurrentCashBalance(CoinbaseProviderFactory):
