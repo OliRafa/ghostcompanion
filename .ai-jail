@@ -1,0 +1,14 @@
+# ai-jail sandbox configuration
+# https://github.com/akitaonrails/ai-jail
+# Edit freely. Regenerate with: ai-jail --clean --init
+
+command = ["claude"]
+ro_maps = ["/home/linuxbrew"]
+rw_maps = ["/home/vscode/.local/share"]
+hide_config = true
+hide_dotdirs = [".ssh", ".gnupg", ".aws", ".docker", ".mozilla"]
+docker = false
+display = false
+gpu = false
+mask = [".env"]
+no_save_config = true

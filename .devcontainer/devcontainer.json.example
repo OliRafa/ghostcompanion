@@ -1,0 +1,52 @@
+{
+  "name": "Ghostcompanion",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/home/vscode/Work/ghostcompanion",
+  "workspaceMount": "source=ghostcompanion-workspace,target=/home/vscode/Work/ghostcompanion,type=volume",
+  "mounts": [
+    {
+      "source": "${localEnv:HOME}/.ssh",
+      "target": "/tmp/host-ssh",
+      "type": "bind"
+    },
+    {
+      "source": "ghostcompanion-claude",
+      "target": "/home/vscode/.claude",
+      "type": "volume"
+    },
+    {
+      "source": "/var/run/docker.sock",
+      "target": "/var/run/docker.sock",
+      "type": "bind"
+    }
+  ],
+  "features": {
+    "ghcr.io/OliRafa/devcontainer-features/homebrew-packages": {
+      "packages": "claude-code,rtk,gh"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest",
+      "moby": false
+    }
+  },
+  "onCreateCommand": "sudo cp -r /tmp/host-ssh/. /home/vscode/.ssh/; sudo chown -RH vscode:vscode /home/vscode/.ssh 2>/dev/null; chmod 700 /home/vscode/.ssh; chmod 600 /home/vscode/.ssh/id_* 2>/dev/null; ssh-keyscan github.com >> /home/vscode/.ssh/known_hosts 2>/dev/null; [ -d .git ] || git clone git@github.com:olirafa/ghostcompanion.git .",
+  "containerUser": "vscode",
+  "remoteUser": "vscode",
+  "runArgs": [
+    "--network",
+    "host",
+    "--name",
+    "ghostcompanion",
+    "--security-opt",
+    "seccomp=unconfined",
+    "--security-opt",
+    "apparmor=unconfined",
+    "--security-opt",
+    "label=disable",
+    "--security-opt",
+    "systempaths=unconfined"
+  ]
+}
