@@ -107,6 +107,26 @@ class TestSplitShares(AssetFactory):
         assert self.asset.trades[1] == after_the_fact_trade
 
 
+class TestReverseSplitShares(AssetFactory):
+    @fixture
+    def split(self) -> Split:
+        return Split(
+            effective_date=datetime.datetime(2024, 3, 15),
+            ratio=Decimal("0.25"),
+            symbol="STOCKA",
+        )
+
+    def should_reduce_quantity_before_effective_date(self, split):
+        self.asset.split_shares(split)
+
+        assert self.asset.trades[0].quantity == Decimal("0.25")
+
+    def should_multiply_unit_price(self, split):
+        self.asset.split_shares(split)
+
+        assert self.asset.trades[0].unit_price == Decimal("161.5956")
+
+
 class TestHasTrade(AssetFactory):
     def should_return_true_when_trade_exists(self, trade):
         result = self.asset.has_trade(trade)

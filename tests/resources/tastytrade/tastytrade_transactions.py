@@ -236,6 +236,100 @@ forward_split = [
 ]
 
 
+reverse_split = [
+    Transaction(
+        **{
+            "account_number": "6VV78917",
+            "action": "Sell to Close",
+            "agency_price": None,
+            "clearing_fees": None,
+            "commission": None,
+            "cost_basis_reconciliation_date": None,
+            "description": "Reverse split: Close 4.0 STOCKA",
+            "destination_venue": None,
+            "exchange": None,
+            "exchange_affiliation_identifier": None,
+            "exec_id": None,
+            "executed_at": datetime.datetime(
+                2024, 3, 15, 18, 36, 20, 28000, tzinfo=datetime.timezone.utc
+            ),
+            "ext_exchange_order_number": None,
+            "ext_exec_id": None,
+            "ext_global_order_number": None,
+            "ext_group_fill_id": None,
+            "ext_group_id": None,
+            "id": 274072377,
+            "instrument_type": InstrumentType.EQUITY,
+            "is_estimated_fee": True,
+            "leg_count": None,
+            "lots": None,
+            "net_value": Decimal("161.6"),
+            "order_id": None,
+            "other_charge": None,
+            "other_charge_description": None,
+            "other_charge_effect": None,
+            "price": None,
+            "principal_price": None,
+            "proprietary_index_option_fees": None,
+            "quantity": Decimal("4.0"),
+            "regulatory_fees": None,
+            "reverses_id": None,
+            "symbol": "STOCKA",
+            "transaction_date": datetime.datetime(2024, 3, 15),
+            "transaction_sub_type": "Reverse Split",
+            "transaction_type": "Receive Deliver",
+            "underlying_symbol": "STOCKA",
+            "value": Decimal("161.6"),
+        }
+    ),
+    Transaction(
+        **{
+            "account_number": "6VV78917",
+            "action": "Buy to Open",
+            "agency_price": None,
+            "clearing_fees": None,
+            "commission": None,
+            "cost_basis_reconciliation_date": None,
+            "description": "Reverse split: Open 1.0 STOCKA",
+            "destination_venue": None,
+            "exchange": None,
+            "exchange_affiliation_identifier": None,
+            "exec_id": None,
+            "executed_at": datetime.datetime(
+                2024, 3, 15, 18, 36, 21, 28000, tzinfo=datetime.timezone.utc
+            ),
+            "ext_exchange_order_number": None,
+            "ext_exec_id": None,
+            "ext_global_order_number": None,
+            "ext_group_fill_id": None,
+            "ext_group_id": None,
+            "id": 274072378,
+            "instrument_type": InstrumentType.EQUITY,
+            "is_estimated_fee": True,
+            "leg_count": None,
+            "lots": None,
+            "net_value": Decimal("161.6"),
+            "order_id": None,
+            "other_charge": None,
+            "other_charge_description": None,
+            "other_charge_effect": None,
+            "price": None,
+            "principal_price": None,
+            "proprietary_index_option_fees": None,
+            "quantity": Decimal("1.0"),
+            "regulatory_fees": None,
+            "reverses_id": None,
+            "symbol": "STOCKA",
+            "transaction_date": datetime.datetime(2024, 3, 15),
+            "transaction_sub_type": "Reverse Split",
+            "transaction_type": "Receive Deliver",
+            "underlying_symbol": "STOCKA",
+            "value": Decimal("161.6"),
+        }
+    ),
+]
+
+
 dividends = [
     Transaction(
         **{
@@ -525,6 +619,7 @@ TRANSACTIONS = [
     *dividends,
     *divident_reinvestment,
     *forward_split,
+    *reverse_split,
     symbol_change_buy_new,
     symbol_change_sell_old,
     *trade_buys,

@@ -85,13 +85,28 @@ class TestGetSymbolChanges(TastytradeProviderFactory):
 
 
 class TestGetSplits(TastytradeProviderFactory):
-    def should_return_all_forward_splits(self):
+    def should_return_forward_and_reverse_splits(self):
         results = self.tastytrade_provider.get_splits()
 
-        assert len(results) == 1
-        assert results[0].symbol == "STOCKA"
-        assert results[0].ratio == Decimal("2.0")
-        assert results[0].effective_date == datetime.date(2023, 9, 28)
+        assert len(results) == 2
+
+    def should_return_forward_split(self):
+        results = self.tastytrade_provider.get_splits()
+
+        forward_split = next(filter(lambda split: split.ratio > 1, results))
+
+        assert forward_split.symbol == "STOCKA"
+        assert forward_split.ratio == Decimal("2.0")
+        assert forward_split.effective_date == datetime.date(2023, 9, 28)
+
+    def should_return_reverse_split(self):
+        results = self.tastytrade_provider.get_splits()
+
+        reverse_split = next(filter(lambda split: split.ratio < 1, results))
+
+        assert reverse_split.symbol == "STOCKA"
+        assert reverse_split.ratio == Decimal("0.25")
+        assert reverse_split.effective_date == datetime.date(2024, 3, 15)
 
 
 class TestGetDividends(TastytradeProviderFactory):

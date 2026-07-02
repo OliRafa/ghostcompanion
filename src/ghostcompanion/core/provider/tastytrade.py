@@ -150,9 +150,11 @@ class TastytradeProvider:
         return splits
 
     def _filter_splits(self) -> Iterable[Transaction]:
+        # A reverse split closes more shares than it opens, so the same
+        # buy/sell ratio comes out below 1 and split_shares scales accordingly.
         return filter(
             lambda x: x.transaction_type == "Receive Deliver"
-            and x.transaction_sub_type == "Forward Split",
+            and x.transaction_sub_type in ("Forward Split", "Reverse Split"),
             self._history,
         )
 
