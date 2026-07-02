@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.6.0](https://github.com/OliRafa/ghostcompanion/compare/v2.5.1...v2.6.0) (2026-07-02)
+
+
+### Features
+
+* **tastytrade:** handle reverse splits alongside forward splits ([3423bbd](https://github.com/OliRafa/ghostcompanion/commit/3423bbdef6c2894e332ba554b0b08cc1fe9d8f01))
+
 ## [2.5.1](https://github.com/OliRafa/ghostcompanion/compare/v2.5.0...v2.5.1) (2026-05-30)
 
 
