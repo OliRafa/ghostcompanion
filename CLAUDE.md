@@ -321,12 +321,33 @@ UseCases should be tested with **Integration Tests** using **InMemory repositori
 
 ## 6. CI/CD Workflows
 
-GitHub Actions workflows are defined in `.github/workflows/`:
+### Local-first CI
 
-- **`continuous_integration.yml`**: Runs on push/PR to main
-  - Checks code formatting with Black
-  - Validates import sorting with isort
-  - Runs pytest test suite
+CI is a single script, `scripts/ci.sh`, which is the **one source of truth** for
+what "passing" means. It runs, in order:
+
+1. `poetry install`
+2. `black --check .`
+3. `isort --check-only .`
+4. `pylama .`
+5. `pytest`
+
+The exact same script runs in three places, so local and GitHub results are
+always identical:
+
+- **Git hooks** — `hooks/pre-commit` and `hooks/pre-push` both run the full
+  script. Enable them once after cloning with `./scripts/setup-hooks.sh` (points
+  `core.hooksPath` at the version-controlled `hooks/` directory).
+- **GitHub Actions** — `continuous_integration.yml` runs `./scripts/ci.sh`.
+
+There is intentionally **no partial/fast mode**: every commit, every push, and
+GitHub all run the complete pipeline. Run `./scripts/ci.sh` directly any time to
+reproduce CI locally.
+
+### Workflows (`.github/workflows/`)
+
+- **`continuous_integration.yml`**: Runs on push/PR to main. Sets up Python +
+  Poetry (with venv caching), then runs `./scripts/ci.sh`.
 
 - **`continuous_delivery.yml`**: Runs on push to main
   - Creates semantic releases

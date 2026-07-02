@@ -264,9 +264,18 @@ Don't forget to give the project a star! Thanks again!
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+3. Enable the git hooks once: `./scripts/setup-hooks.sh`
+4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+5. Push to the Branch (`git push origin feature/AmazingFeature`)
+6. Open a Pull Request
+
+### Continuous Integration
+
+CI is a single script, `scripts/ci.sh`, that runs formatting (Black), import
+sorting (isort), linting (pylama), and the test suite. The exact same script
+runs as the `pre-commit` and `pre-push` git hooks and on GitHub Actions, so
+whatever passes locally passes CI. Run `./scripts/setup-hooks.sh` once after
+cloning to enable the hooks; run `./scripts/ci.sh` any time to reproduce CI.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
