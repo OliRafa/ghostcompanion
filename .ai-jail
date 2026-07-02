@@ -2,13 +2,21 @@
 # https://github.com/akitaonrails/ai-jail
 # Edit freely. Regenerate with: ai-jail --clean --init
 
-command = ["claude"]
-ro_maps = ["/home/linuxbrew"]
-rw_maps = ["/home/vscode/.local/share"]
-hide_config = true
-hide_dotdirs = [".ssh", ".gnupg", ".aws", ".docker", ".mozilla"]
-docker = false
-display = false
-gpu = false
+command = ["claude", "--dangerously-skip-permissions"]
+
+# Run claude in a private (tmpfs) home for isolation, mapping back only what it
+# needs. private_home also avoids a bwrap failure when ~/.config or ~/.ssh are
+# stow-managed symlinks (e.g. a dotfiles devcontainer feature): ai-jail's default
+# host-home passthrough can't bind those symlinks.
+private_home = true
+
+# /home/linuxbrew: brew-installed claude binary. ~/.config/git and ~/.gitconfig:
+# git identity so claude can commit (whichever exists; missing maps are skipped).
+ro_maps = ["/home/linuxbrew", "/home/vscode/.config/git", "/home/vscode/.gitconfig"]
+
+# ~/.local/share: rtk / opencode data. ~/.claude: claude config + credentials.
+rw_maps = ["/home/vscode/.local/share", "/home/vscode/.claude"]
+
 mask = [".env"]
+hide_config = true
 no_save_config = true
