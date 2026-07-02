@@ -32,7 +32,7 @@
       "moby": false
     }
   },
-  "onCreateCommand": "sudo cp -r /tmp/host-ssh/. /home/vscode/.ssh/; sudo chown -RH vscode:vscode /home/vscode/.ssh 2>/dev/null; chmod 700 /home/vscode/.ssh; chmod 600 /home/vscode/.ssh/id_* 2>/dev/null; ssh-keyscan github.com >> /home/vscode/.ssh/known_hosts 2>/dev/null; sudo chown -R vscode:vscode /home/vscode/.claude; [ -d .git ] || git clone git@github.com:olirafa/ghostcompanion.git .",
+  "onCreateCommand": "sudo cp -r /tmp/host-ssh/. /home/vscode/.ssh/; sudo chown -RH vscode:vscode /home/vscode/.ssh 2>/dev/null; chmod 700 /home/vscode/.ssh; chmod 600 /home/vscode/.ssh/id_* 2>/dev/null; ssh-keyscan github.com >> /home/vscode/.ssh/known_hosts 2>/dev/null; sudo chown -R vscode:vscode /home/vscode/.claude; [ -f /home/vscode/.claude.json ] || echo '{}' > /home/vscode/.claude.json; [ -d .git ] || git clone git@github.com:olirafa/ghostcompanion.git .",
   "containerUser": "vscode",
   "remoteUser": "vscode",
   "runArgs": [
