@@ -16,6 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python 3.12
+        id: setup-python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -34,17 +35,5 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
-      - name: Install dependencies
-        run: poetry install --no-interaction --no-root
-
-      - name: Install library
-        run: poetry install --no-interaction
-
-      - name: Check formatting with Black
-        run: poetry run black --check .
-
-      - name: Check imports with isort
-        run: poetry run isort --check-only .
-
-      - name: Run tests
-        run: poetry run pytest
+      - name: Run CI pipeline
+        run: ./scripts/ci.sh

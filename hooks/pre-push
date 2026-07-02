@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Runs the full CI pipeline before every push — identical to GitHub CI.
+set -euo pipefail
+exec "$(git rev-parse --show-toplevel)/scripts/ci.sh"
