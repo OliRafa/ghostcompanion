@@ -12,13 +12,13 @@ private_home = true
 
 # /home/linuxbrew: brew-installed claude binary. ~/.config/git and ~/.gitconfig:
 # git identity so claude can commit (whichever exists; missing maps are skipped).
-ro_maps = ["/home/linuxbrew", "/home/vscode/.config/git", "/home/vscode/.gitconfig"]
+ro_maps = ["/home/linuxbrew", "/home/vscode/.config/git", "/home/vscode/.gitconfig", "/home/vscode/.config/gh"]
 
 # ~/.local/share: rtk / opencode data. ~/.claude + ~/.claude.json: claude config,
 # credentials and login state, so auth persists across jail sessions (the private
 # tmpfs home would otherwise drop ~/.claude.json each run).
 rw_maps = ["/home/vscode/.local/share", "/home/vscode/.claude", "/home/vscode/.claude.json"]
 
-mask = [".env"]
+mask = [".env", "/home/vscode/.config/gh/hosts.yaml"]
 hide_config = true
 no_save_config = true
