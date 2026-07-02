@@ -37,3 +37,8 @@ jobs:
 
       - name: Run CI pipeline
         run: ./scripts/ci.sh
+        env:
+          # E2E tests run against this Ghostfolio instance. No account token is
+          # set, so the suite creates a throwaway user and deletes it afterwards
+          # (ephemeral), leaving nothing behind.
+          GHOSTFOLIO_BASE_URL: https://ghostfol.io
