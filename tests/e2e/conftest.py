@@ -16,6 +16,7 @@ Target instance comes from ``GHOSTFOLIO_BASE_URL`` (defaults to the public
 """
 
 import logging
+from collections.abc import Iterator
 from os import getenv
 from pathlib import Path
 
@@ -185,9 +186,17 @@ def ghostfolio_session(ghostfolio_base_url, log_ghostfolio_api):
     _API_LOG.info("session end: cleanup complete")
 
 
-@pytest.fixture
-def ghostfolio(monkeypatch, ghostfolio_session) -> GhostfolioAdapter:
+@pytest.fixture(scope="session")
+def ghostfolio_api(ghostfolio_session) -> Iterator[GhostfolioApi]:
+    """Log in once per session: ghostfol.io rate-limits ``/auth/anonymous`` and
+    answers 429 after about ten logins in a row."""
     base_url, account_token, _ = ghostfolio_session
-    monkeypatch.setattr(GhostfolioSettings, "BASE_URL", base_url)
-    monkeypatch.setattr(GhostfolioSettings, "ACCOUNT_TOKEN", account_token)
-    return GhostfolioAdapter(GhostfolioApi())
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setattr(GhostfolioSettings, "BASE_URL", base_url)
+        monkeypatch.setattr(GhostfolioSettings, "ACCOUNT_TOKEN", account_token)
+        yield GhostfolioApi()
+
+
+@pytest.fixture
+def ghostfolio(ghostfolio_api) -> GhostfolioAdapter:
+    return GhostfolioAdapter(ghostfolio_api)
