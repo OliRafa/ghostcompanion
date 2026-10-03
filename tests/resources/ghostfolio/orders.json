@@ -28,7 +28,7 @@
             "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
             "Platform": null
         },
-        "SymbolProfile": {
+        "assetProfile": {
             "assetClass": "EQUITY",
             "assetSubClass": "ETF",
             "comment": null,
@@ -88,7 +88,7 @@
             "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
             "Platform": null
         },
-        "SymbolProfile": {
+        "assetProfile": {
             "assetClass": "EQUITY",
             "assetSubClass": "ETF",
             "comment": null,
@@ -148,7 +148,7 @@
             "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
             "Platform": null
         },
-        "SymbolProfile": {
+        "assetProfile": {
             "assetClass": "EQUITY",
             "assetSubClass": "STOCK",
             "comment": null,
@@ -220,7 +220,7 @@
             "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
             "Platform": null
         },
-        "SymbolProfile": {
+        "assetProfile": {
             "assetClass": "EQUITY",
             "assetSubClass": "ETF",
             "comment": null,
@@ -280,7 +280,7 @@
             "userId": "933030a7-c6eb-42d0-bf05-52e978f3ca5e",
             "Platform": null
         },
-        "SymbolProfile": {
+        "assetProfile": {
             "assetClass": "EQUITY",
             "assetSubClass": "STOCK",
             "comment": null,

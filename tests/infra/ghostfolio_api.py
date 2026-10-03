@@ -85,7 +85,7 @@ class InMemoryGhostfolioApi(GhostfolioPort):
             order["Account"] = {"id": order["accountId"]}
             del order["accountId"]
 
-            order["SymbolProfile"] = {"symbol": order["symbol"]}
+            order["assetProfile"] = {"symbol": order["symbol"]}
             del order["symbol"]
 
         self._orders += orders

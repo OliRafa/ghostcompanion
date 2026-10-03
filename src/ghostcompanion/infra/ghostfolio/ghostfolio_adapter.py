@@ -65,7 +65,7 @@ class GhostfolioAdapter:
             fee=Decimal(str(order["fee"])),
             id=order["id"],
             quantity=Decimal(str(order["quantity"])),
-            symbol=order["SymbolProfile"]["symbol"],
+            symbol=order["assetProfile"]["symbol"],
             transaction_type=TransactionType(order["type"]),
             unit_price=Decimal(str(order["unitPrice"])),
         )
