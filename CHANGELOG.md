@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+# [3.0.0](https://github.com/OliRafa/ghostcompanion/compare/v2.6.0...v3.0.0) (2026-10-07)
+
+
+### Bug Fixes
+
+* **deps:** install ibflex 1.1 from PyPI ([df747a5](https://github.com/OliRafa/ghostcompanion/commit/df747a5339078eb4aebbb5d05aa208912ca031bc))
+* **ghostfolio:** read activity symbol from assetProfile ([df6d981](https://github.com/OliRafa/ghostcompanion/commit/df6d981fab7ca18824a26b2ad05fc7fbcbef5a5a))
+
+
+* feat(crypto)!: track self-custody wallets and transfers to them ([7f2da23](https://github.com/OliRafa/ghostcompanion/commit/7f2da239383483333d151c7a0778037ed4f58fe6))
+
+
+### BREAKING CHANGES
+
+* `symbol_mapping.yaml` is no longer read. Move its entries
+under the `symbol_mapping` key of `ghostcompanion.yaml`; GhostCompanion
+refuses to start while only the old file is present.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 # [2.6.0](https://github.com/OliRafa/ghostcompanion/compare/v2.5.1...v2.6.0) (2026-07-02)
 
 
