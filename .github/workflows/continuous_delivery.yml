@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -37,7 +37,7 @@ jobs:
 
       - name: Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v6
         if: steps.semantic-releases.outputs.new_release_published == 'true'
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/ghostcompanion
@@ -47,18 +47,18 @@ jobs:
             type=semver,pattern={{major}},value=${{ steps.semantic-releases.outputs.new_release_version }}
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         if: steps.semantic-releases.outputs.new_release_published == 'true'
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         if: steps.semantic-releases.outputs.new_release_published == 'true'
 
       - name: Build and Publish to Docker Hub
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         if: steps.semantic-releases.outputs.new_release_published == 'true'
         with:
           context: .
