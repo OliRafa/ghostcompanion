@@ -1,3 +1,8 @@
+from tests.resources.blockchain.transactions import (
+    COINBASE_WITHDRAWAL_TXID,
+    COLD_STORAGE_ADDRESS_1,
+)
+
 TRANSACTIONS = [
     {
         "amount": {"amount": "4.28298314", "currency": "BTC"},
@@ -55,7 +60,7 @@ TRANSACTIONS = [
         "id": "58d6ad84-87cc-436a-93e4-9d79c13652b1",
         "native_amount": {"amount": "780.64", "currency": "USD"},
         "network": {
-            "hash": "<hash_value>",
+            "hash": "c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
             "network_name": "bitcoin",
             "status": "unconfirmed",
         },
@@ -119,7 +124,7 @@ TRANSACTIONS = [
         "idem": "27712136-2379-4e6d-b52f-b3c4942b3c1a",
         "native_amount": {"amount": "-75.13", "currency": "USD"},
         "network": {
-            "hash": "<hash_value>",
+            "hash": "c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2",
             "network_name": "bitcoin",
             "status": "confirmed",
             "transaction_fee": {"amount": "0.03497583", "currency": "BTC"},
@@ -154,7 +159,7 @@ TRANSACTIONS = [
         "idem": "3f9ac490-1823-4f52-b743-ca0515396b44",
         "native_amount": {"amount": "-68.94", "currency": "USD"},
         "network": {
-            "hash": "<hash_value>",
+            "hash": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
             "network_name": "ethereum",
             "status": "unconfirmed",
             "transaction_fee": {"amount": "0.0000000", "currency": "ETH"},
@@ -180,6 +185,24 @@ TRANSACTIONS = [
         "network": {"status": "off_blockchain"},
         "resource": "transaction",
         "status": "completed",
+        "type": "send",
+    },
+    # Withdrawal to the "Cold Storage" wallet; its on-chain side is in
+    # tests/resources/blockchain/transactions.py.
+    {
+        "amount": {"amount": "-0.00724451", "currency": "BTC"},
+        "created_at": "2024-03-01T11:50:00Z",
+        "id": "0c7c9a3e-5b1f-4c62-9d55-2f0a8e6b1d47",
+        "native_amount": {"amount": "-441.92", "currency": "USD"},
+        "network": {
+            "hash": COINBASE_WITHDRAWAL_TXID,
+            "network_name": "bitcoin",
+            "status": "pending",
+            "transaction_fee": {"amount": "0.00001029", "currency": "BTC"},
+        },
+        "resource": "transaction",
+        "status": "completed",
+        "to": {"address": COLD_STORAGE_ADDRESS_1, "resource": "address"},
         "type": "send",
     },
 ]

@@ -6,9 +6,9 @@ from ghostcompanion.core.usecase.import_interactive_brokers_transactions import 
     ImportInteractiveBrokersTransactions,
 )
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from tests.infra.config_repository import InMemoryConfigRepository
 from tests.infra.ghostfolio_api import InMemoryGhostfolioApi
 from tests.infra.interactive_brokers_api import InMemoryInteractiveBrokersApi
-from tests.infra.symbol_mapping_repository import InMemorySymbolMappingRepository
 
 
 class ImportInteractiveBrokersTransactionsFactory:
@@ -17,7 +17,7 @@ class ImportInteractiveBrokersTransactionsFactory:
         self.import_transactions = ImportInteractiveBrokersTransactions(
             InteractiveBrokersProvider(InMemoryInteractiveBrokersApi()),
             GhostfolioAdapter(InMemoryGhostfolioApi()),
-            InMemorySymbolMappingRepository(),
+            InMemoryConfigRepository(),
         )
 
 
@@ -37,10 +37,10 @@ class TestImportInteractiveBrokersTransactions(
         assert all(trade.data_source == "YAHOO" for trade in trades)
 
     def should_take_into_account_symbol_maps(self):
-        symbol_mapping_repository = InMemorySymbolMappingRepository(
+        config_repository = InMemoryConfigRepository(
             [SymbolChange(old_symbol="STOCKA", new_symbol="NEWSTOCKA")]
         )
-        self.import_transactions.symbol_mapping_repository = symbol_mapping_repository
+        self.import_transactions.config_repository = config_repository
 
         portfolio = self.import_transactions.execute()
 

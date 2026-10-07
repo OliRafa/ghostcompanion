@@ -16,3 +16,7 @@ class TransactionTypeNotFoundException(Exception):
 
 class TradeNotFoundException(Exception):
     ...
+
+
+class PriceNotFoundException(Exception):
+    ...

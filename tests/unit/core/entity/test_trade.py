@@ -231,3 +231,39 @@ class TestEquals:
         )
 
         assert trade_a != trade_b
+
+    def should_take_transaction_type_into_consideration(self):
+        buy = build_trade(TransactionType.BUY)
+        sell = build_trade(TransactionType.SELL)
+
+        assert buy != sell
+
+    def when_amounts_differ_beyond_double_precision_should_be_equal(self):
+        computed = build_trade(unit_price=Decimal("2156.76810466827243"))
+        # What Ghostfolio returns after storing it as a double.
+        stored = build_trade(unit_price=Decimal("2156.7681046682724"))
+
+        assert computed == stored
+
+    def when_amounts_differ_within_double_precision_should_not_be_equal(self):
+        computed = build_trade(unit_price=Decimal("2156.7681046682"))
+        stored = build_trade(unit_price=Decimal("2156.7681046683"))
+
+        assert computed != stored
+
+    def when_compared_with_other_types_should_not_be_equal(self):
+        assert build_trade() != "TEST"
+
+
+def build_trade(
+    transaction_type: TransactionType = TransactionType.BUY,
+    unit_price: Decimal = Decimal("0.234"),
+) -> Trade:
+    return Trade(
+        executed_at=datetime(2024, 1, 1, 12),
+        fee=Decimal("0.21"),
+        quantity=Decimal("1.02"),
+        symbol="TEST",
+        transaction_type=transaction_type,
+        unit_price=unit_price,
+    )

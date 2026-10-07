@@ -1,9 +1,16 @@
 import pandas as pd
 from pandas import Timestamp
 
+from tests.resources.yahoo_finance.price_history import PRICE_HISTORIES
+
 
 class InMemoryYahooFinanceApi:
-    def __init__(self):
+    def __init__(
+        self, price_histories: dict[str, tuple[str, dict[str, float]]] | None = None
+    ):
+        self._price_histories = (
+            PRICE_HISTORIES if price_histories is None else price_histories
+        )
         self._dividends = {
             Timestamp("2015-05-18 00:00:00-0400", tz="America/New_York"): 0.286,
             Timestamp("2015-09-09 00:00:00-0400", tz="America/New_York"): 0.62,
@@ -40,3 +47,11 @@ class InMemoryYahooFinanceApi:
             return pd.Series(self._dividends)
 
         return pd.Series([])
+
+    def get_price_history(self, ticker: str) -> pd.Series:
+        timezone, closes = self._price_histories.get(ticker, ("UTC", {}))
+        return pd.Series(
+            list(closes.values()),
+            index=pd.DatetimeIndex(list(closes)).tz_localize(timezone),
+            dtype="float64",
+        )

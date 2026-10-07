@@ -34,6 +34,21 @@ class TestGetSymbols(PortfolioFactory):
         assert "STOCKB" in results
 
 
+class TestAddTrades(PortfolioFactory):
+    def when_asset_exists_should_append_to_it(self, stock_a_trades):
+        extra_trade = stock_a_trades[0].model_copy()
+
+        self.portfolio.add_trades("STOCKA", [extra_trade])
+
+        assert self.portfolio.get_symbols() == ["STOCKA", "STOCKB"]
+        assert len(self.portfolio.get_trades("STOCKA")) == len(stock_a_trades) + 1
+
+    def when_asset_is_absent_should_create_it(self, stock_a_trades):
+        self.portfolio.add_trades("STOCKC", stock_a_trades)
+
+        assert self.portfolio.get_trades("STOCKC") == stock_a_trades
+
+
 class TestAdaptSymbolChanges(PortfolioFactory):
     @fixture
     def change(self) -> SymbolChange:

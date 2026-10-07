@@ -16,7 +16,7 @@ from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
 from tests.e2e.resources.stubs import InMemoryTastytradeApi, StubYahooFinanceApi
-from tests.infra.symbol_mapping_repository import InMemorySymbolMappingRepository
+from tests.infra.config_repository import InMemoryConfigRepository
 
 
 class TastytradeTransactionsE2E:
@@ -26,7 +26,7 @@ class TastytradeTransactionsE2E:
         provider = TastytradeProvider(InMemoryTastytradeApi())
         dividends = DividendsProviderAdapter(StubYahooFinanceApi())
         use_case = ImportTastytradeTransactions(
-            dividends, ghostfolio, InMemorySymbolMappingRepository(), provider
+            dividends, ghostfolio, InMemoryConfigRepository(), provider
         )
 
         self.portfolio = use_case.execute()

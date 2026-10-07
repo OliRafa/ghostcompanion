@@ -1,0 +1,58 @@
+# Local Ghostfolio for development and the e2e suite:
+#   docker compose -f docker-compose.dev.yml up -d
+# then point GHOSTFOLIO_BASE_URL at http://localhost:3333.
+name: ghostfolio-dev
+
+services:
+  ghostfolio:
+    image: docker.io/ghostfolio/ghostfolio:3.78.0
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+    environment:
+      ACCESS_TOKEN_SALT: dev-access-token-salt
+      JWT_SECRET_KEY: dev-jwt-secret-key
+      # Ghostfolio's Prisma adapter fails the TLS handshake with `sslmode=prefer`
+      # against a Postgres that has no TLS configured.
+      DATABASE_URL: postgresql://user:password@postgres:5432/ghostfolio-db?connect_timeout=300&sslmode=disable
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: dev-redis-password
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3333/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: docker.io/library/postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ghostfolio-db
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d ghostfolio-db -U user"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: docker.io/library/redis:alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "dev-redis-password"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a dev-redis-password ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres:

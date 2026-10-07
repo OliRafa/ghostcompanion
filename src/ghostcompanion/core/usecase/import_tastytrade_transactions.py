@@ -6,10 +6,7 @@ from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
-from ghostcompanion.repositories.symbol_mapping import (
-    SymbolMappingRepository,
-    SymbolMappingsNotFoundException,
-)
+from ghostcompanion.repositories.config import ConfigRepository
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +16,12 @@ class ImportTastytradeTransactions:
         self,
         dividends_provider: DividendsProviderAdapter,
         ghostfolio: GhostfolioAdapter,
-        symbol_mapping_repository: SymbolMappingRepository,
+        config_repository: ConfigRepository,
         tastytrade: TastytradeProvider,
     ) -> None:
         self.dividends_provider = dividends_provider
         self.ghostfolio = ghostfolio
-        self.symbol_mapping_repository = symbol_mapping_repository
+        self.config_repository = config_repository
         self.tastytrade = tastytrade
 
     def execute(self) -> Portfolio:
@@ -87,14 +84,9 @@ class ImportTastytradeTransactions:
             logger.info("Handling stock splits")
             portfolio.adapt_stock_splits(stock_splits)
 
-        try:
-            symbol_mappings = self.symbol_mapping_repository.get_symbol_mappings()
-            logger.info("Handling symbol changes from mapping file")
+        symbol_mappings = self.config_repository.get_symbol_mappings()
+        if symbol_mappings:
+            logger.info("Handling symbol changes from config file")
             portfolio.adapt_symbol_changes(symbol_mappings)
-
-        except SymbolMappingsNotFoundException:
-            logger.info(
-                "Skipping symbol changes from mapping file, as no file was found"
-            )
 
         return portfolio

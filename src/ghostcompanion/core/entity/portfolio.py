@@ -21,6 +21,12 @@ class Portfolio:
         asset.add_trades(trades)
         self._assets.append(asset)
 
+    def add_trades(self, symbol: str, trades: list[Trade]):
+        if self.has_asset(symbol):
+            self.get_asset(symbol).add_trades(trades)
+        else:
+            self.add_asset(symbol, trades)
+
     def adapt_symbol_changes(self, changes: list[SymbolChange]):
         for change in changes:
             if self.has_asset(change.old_symbol):

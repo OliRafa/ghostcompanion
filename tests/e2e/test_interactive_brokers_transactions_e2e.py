@@ -13,7 +13,7 @@ from ghostcompanion.core.usecase.import_interactive_brokers_transactions import 
     ImportInteractiveBrokersTransactions,
 )
 from tests.e2e.resources.interactive_brokers import InMemoryInteractiveBrokersApi
-from tests.infra.symbol_mapping_repository import InMemorySymbolMappingRepository
+from tests.infra.config_repository import InMemoryConfigRepository
 
 
 class InteractiveBrokersTransactionsE2E:
@@ -22,7 +22,7 @@ class InteractiveBrokersTransactionsE2E:
         self.ghostfolio = ghostfolio
         provider = InteractiveBrokersProvider(InMemoryInteractiveBrokersApi())
         use_case = ImportInteractiveBrokersTransactions(
-            provider, ghostfolio, InMemorySymbolMappingRepository()
+            provider, ghostfolio, InMemoryConfigRepository()
         )
 
         self.portfolio = use_case.execute()

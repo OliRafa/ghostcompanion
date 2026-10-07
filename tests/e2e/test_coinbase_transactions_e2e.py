@@ -12,25 +12,32 @@ from decimal import Decimal
 from pytest import fixture
 
 from ghostcompanion.core.entity.transaction_type import TransactionType
+from ghostcompanion.core.provider.blockchain import BlockchainProvider
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
-from ghostcompanion.core.usecase.import_coinbase_transactions import (
-    ImportCoinbaseTransactions,
+from ghostcompanion.core.usecase.import_crypto_transactions import (
+    ImportCryptoTransactions,
 )
+from ghostcompanion.infra.market_prices.market_price_adapter import MarketPriceAdapter
 from tests.e2e.resources.coinbase import InMemoryCoinbaseApi
-from tests.infra.symbol_mapping_repository import InMemorySymbolMappingRepository
+from tests.infra.blockchain_api import InMemoryBlockchainApi
+from tests.infra.config_repository import InMemoryConfigRepository
+from tests.infra.yahoo_finance_api import InMemoryYahooFinanceApi
 
 
 class CoinbaseTransactionsE2E:
     @fixture(autouse=True)
     def imported_portfolio(self, ghostfolio):
         self.ghostfolio = ghostfolio
-        provider = CoinbaseProvider(InMemoryCoinbaseApi())
-        use_case = ImportCoinbaseTransactions(
-            provider, ghostfolio, InMemorySymbolMappingRepository()
+        market_prices = MarketPriceAdapter(InMemoryYahooFinanceApi())
+        use_case = ImportCryptoTransactions(
+            BlockchainProvider(InMemoryBlockchainApi([]), market_prices),
+            CoinbaseProvider(InMemoryCoinbaseApi()),
+            InMemoryConfigRepository(),
+            ghostfolio,
         )
 
-        self.portfolio = use_case.execute()
+        [self.portfolio] = use_case.execute()
         ExportPortfolio(ghostfolio).execute(self.portfolio)
 
     def orders_for(self, symbol: str):

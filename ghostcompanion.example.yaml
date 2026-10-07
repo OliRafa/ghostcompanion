@@ -1,0 +1,14 @@
+# Copy to `ghostcompanion.yaml` (or point GHOSTCOMPANION_CONFIG at another path).
+
+# Rename symbols before exporting to Ghostfolio: <source symbol>: <Ghostfolio symbol>.
+symbol_mapping:
+  EURN: CMBT
+
+# Self-custody wallets, each tracked as its own Ghostfolio account.
+wallets:
+  - name: Cold Storage
+    network: bitcoin
+    # List every address the wallet uses, change addresses included.
+    addresses:
+      - bc1qexampleaddressaaaaaaaaaaaaaaaaaaaaaaaa
+      - bc1qexampleaddressbbbbbbbbbbbbbbbbbbbbbbbb

@@ -159,33 +159,37 @@ class TestHasTrade(AssetFactory):
 
 class TestGetTrade(AssetFactory):
     def should_return_trade(self, trade: Trade):
-        result = self.asset.get_trade(
-            trade.executed_at, trade.fee, trade.quantity, trade.symbol, trade.unit_price
-        )
+        result = self.asset.get_trade(trade.model_copy())
 
-        assert result == trade
+        assert result is self.asset.trades[0]
+
+    def when_trade_was_read_back_from_ghostfolio_should_return_it(self, trade: Trade):
+        trade.unit_price = Decimal("2156.76810466827243")
+        stored = trade.model_copy()
+        stored.unit_price = Decimal(str(float(trade.unit_price)))
+
+        result = self.asset.get_trade(stored)
+
+        assert result is trade
 
     def when_given_dividend_should_return_it(self, dividend_with_infos: Trade):
         self.asset.add_dividends([dividend_with_infos])
 
-        result = self.asset.get_trade(
-            dividend_with_infos.executed_at,
-            dividend_with_infos.fee,
-            dividend_with_infos.quantity,
-            dividend_with_infos.symbol,
-            dividend_with_infos.unit_price,
-        )
+        result = self.asset.get_trade(dividend_with_infos.model_copy())
 
         assert result.transaction_type == TransactionType.DIVIDEND
 
     def when_trade_isnt_found_should_raise_exception(self):
         with pytest.raises(TradeNotFoundException):
             self.asset.get_trade(
-                datetime.datetime.now(),
-                Decimal("0.0"),
-                Decimal("0.0"),
-                "NOTASYMBOL",
-                Decimal("0.0"),
+                Trade(
+                    executed_at=datetime.datetime.now(),
+                    fee=Decimal("0.0"),
+                    quantity=Decimal("0.0"),
+                    symbol="NOTASYMBOL",
+                    transaction_type=TransactionType.BUY,
+                    unit_price=Decimal("0.0"),
+                )
             )
 
 

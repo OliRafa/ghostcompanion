@@ -145,7 +145,7 @@ This project uses **Poetry** for dependency management and packaging.
 
 ### Naming Conventions
 
-- **Classes**: `PascalCase` (e.g., `ImportCoinbaseTransactions`).
+- **Classes**: `PascalCase` (e.g., `ImportCryptoTransactions`).
 - **Functions/Variables**: `snake_case` (e.g., `get_symbol_mappings`).
 - **Private Members**: Prefix with `_` (e.g., `_filter_zero_network_fees`).
 - **Constants**: `UPPER_CASE` (e.g., `DEFAULT_TIMEOUT`).
@@ -228,7 +228,7 @@ The project follows a Clean Architecture structure:
 
 - **`src/ghostcompanion/core`**: Contains business logic, entities, and use cases. No dependencies on external frameworks or infrastructure.
   - `entity`: Domain objects (e.g., `Portfolio`, `Trade`).
-  - `usecase`: Application business rules (e.g., `ImportCoinbaseTransactions`).
+  - `usecase`: Application business rules (e.g., `ImportCryptoTransactions`).
   - `provider` / `ports`: Interfaces for external services.
 - **`src/ghostcompanion/infra`**: Implementations of interfaces (adapters).
   - `coinbase`, `ghostfolio`, `yahoo_finance`: API clients and adapters.

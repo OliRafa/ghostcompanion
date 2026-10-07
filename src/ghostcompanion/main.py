@@ -1,7 +1,9 @@
 import logging
+from pathlib import Path
 
 from ghostcompanion.configs.logging_config import configure_logging
 from ghostcompanion.configs.settings import Settings
+from ghostcompanion.core.provider.blockchain import BlockchainProvider
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider
@@ -9,8 +11,8 @@ from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
 from ghostcompanion.core.usecase.import_coinbase_cash_balances import (
     ImportCoinbaseCashBalances,
 )
-from ghostcompanion.core.usecase.import_coinbase_transactions import (
-    ImportCoinbaseTransactions,
+from ghostcompanion.core.usecase.import_crypto_transactions import (
+    ImportCryptoTransactions,
 )
 from ghostcompanion.core.usecase.import_interactive_brokers_cash_balances import (
     ImportInteractiveBrokersCashBalances,
@@ -24,6 +26,7 @@ from ghostcompanion.core.usecase.import_tastytrade_cash_balances import (
 from ghostcompanion.core.usecase.import_tastytrade_transactions import (
     ImportTastytradeTransactions,
 )
+from ghostcompanion.infra.blockchain.mempool_space_api import MempoolSpaceApi
 from ghostcompanion.infra.coinbase.coinbase_api import CoinbaseApi
 from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
@@ -34,9 +37,10 @@ from ghostcompanion.infra.ghostfolio.ghostfolio_api import GhostfolioApi
 from ghostcompanion.infra.interactive_brokers.interactive_brokers_api import (
     InteractiveBrokersApi,
 )
+from ghostcompanion.infra.market_prices.market_price_adapter import MarketPriceAdapter
 from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
 from ghostcompanion.infra.tastytrade.tastytrade_api import TastytradeApi
-from ghostcompanion.repositories.symbol_mapping import SymbolMappingRepository
+from ghostcompanion.repositories.config import ConfigRepository
 
 logger = logging.getLogger(__name__)
 
@@ -67,18 +71,26 @@ if __name__ == "__main__":
     logger.info("Starting Ghostcompanion")
 
     ghostfolio = GhostfolioAdapter(GhostfolioApi())
-    symbol_mapping_repository = SymbolMappingRepository()
+    config_repository = ConfigRepository(Path(Settings.CONFIG_PATH))
     export_portfolio = ExportPortfolio(ghostfolio)
 
-    if _should_run_coinbase_importer():
-        coinbase_provider = CoinbaseProvider(CoinbaseApi())
-        import_coinbase_transactions = ImportCoinbaseTransactions(
-            coinbase_provider, ghostfolio, symbol_mapping_repository
+    coinbase_provider = (
+        CoinbaseProvider(CoinbaseApi()) if _should_run_coinbase_importer() else None
+    )
+    if coinbase_provider or config_repository.get_wallets():
+        import_crypto_transactions = ImportCryptoTransactions(
+            BlockchainProvider(
+                MempoolSpaceApi(), MarketPriceAdapter(YahooFinanceApi())
+            ),
+            coinbase_provider,
+            config_repository,
+            ghostfolio,
         )
 
-        portfolio = import_coinbase_transactions.execute()
-        export_portfolio.execute(portfolio)
+        for portfolio in import_crypto_transactions.execute():
+            export_portfolio.execute(portfolio)
 
+    if coinbase_provider:
         # Import cash balances from Coinbase
         logger.info("Starting Coinbase cash balance import")
         import_coinbase_cash = ImportCoinbaseCashBalances(coinbase_provider, ghostfolio)
@@ -92,7 +104,7 @@ if __name__ == "__main__":
         import_tastytrade_transactions = ImportTastytradeTransactions(
             dividends_provider,
             ghostfolio,
-            symbol_mapping_repository,
+            config_repository,
             tastytrade_provider,
         )
 
@@ -111,7 +123,7 @@ if __name__ == "__main__":
         interactive_brokers = InteractiveBrokersProvider(InteractiveBrokersApi())
         dividends_provider = DividendsProviderAdapter(YahooFinanceApi())
         import_interactive_brokers_transactions = ImportInteractiveBrokersTransactions(
-            interactive_brokers, ghostfolio, symbol_mapping_repository
+            interactive_brokers, ghostfolio, config_repository
         )
 
         portfolio = import_interactive_brokers_transactions.execute()

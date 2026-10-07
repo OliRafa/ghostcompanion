@@ -11,9 +11,9 @@ from ghostcompanion.core.usecase.import_interactive_brokers_transactions import 
     ImportInteractiveBrokersTransactions,
 )
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
+from tests.infra.config_repository import InMemoryConfigRepository
 from tests.infra.ghostfolio_api import InMemoryGhostfolioApi
 from tests.infra.interactive_brokers_api import InMemoryInteractiveBrokersApi
-from tests.infra.symbol_mapping_repository import InMemorySymbolMappingRepository
 
 
 class ExportPortfolioFactory:
@@ -25,7 +25,7 @@ class ExportPortfolioFactory:
         self.import_transactions = ImportInteractiveBrokersTransactions(
             InteractiveBrokersProvider(InMemoryInteractiveBrokersApi()),
             self.ghostfolio_adapter,
-            InMemorySymbolMappingRepository(),
+            InMemoryConfigRepository(),
         )
         self.export_portfolio: ExportPortfolio = ExportPortfolio(
             self.ghostfolio_adapter

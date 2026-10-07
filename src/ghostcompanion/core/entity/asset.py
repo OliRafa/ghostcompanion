@@ -1,6 +1,3 @@
-from datetime import datetime
-from decimal import Decimal
-
 from ghostcompanion.core.entity.dividend_info import DividendInfo
 from ghostcompanion.core.entity.split import Split
 from ghostcompanion.core.entity.trade import Trade
@@ -78,46 +75,15 @@ class Asset:
     def has_trade(self, trade: Trade) -> bool:
         return trade in self._trades or trade in self._dividends
 
-    def get_trade(
-        self,
-        executed_at: datetime,
-        fee: Decimal,
-        quantity: Decimal,
-        symbol: str,
-        unit_price: Decimal,
-    ) -> Trade:
+    def get_trade(self, trade: Trade) -> Trade:
         try:
-            return next(
-                filter(
-                    lambda x: x.executed_at == executed_at
-                    and x.fee == fee
-                    and x.quantity == quantity
-                    and x.symbol == symbol
-                    and x.unit_price == unit_price,
-                    self._trades,
-                )
-            )
+            return next(x for x in self._trades + self._dividends if x == trade)
 
         except StopIteration:
-            try:
-                return next(
-                    filter(
-                        lambda x: x.executed_at == executed_at
-                        and x.fee == fee
-                        and x.quantity == quantity
-                        and x.symbol == symbol
-                        and x.unit_price == unit_price,
-                        self._dividends,
-                    )
-                )
-
-            except StopIteration:
-                raise TradeNotFoundException()
+            raise TradeNotFoundException()
 
     def delete_trade(self, trade: Trade):
-        _trade = self.get_trade(
-            trade.executed_at, trade.fee, trade.quantity, trade.symbol, trade.unit_price
-        )
+        _trade = self.get_trade(trade)
 
         if _trade in self._dividends:
             self._dividends.remove(_trade)

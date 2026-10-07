@@ -13,7 +13,8 @@
 Transfer transactions from numerous sources to [Ghostfolio](https://github.com/ghostfolio/ghostfolio).
 
 Currently implemented for [Coinbase](https://coinbase.com),
-[Interactive Brokers (IBKR)](https://www.interactivebrokers.com) and [Tastytrade](https://tastytrade.com).
+[Interactive Brokers (IBKR)](https://www.interactivebrokers.com), [Tastytrade](https://tastytrade.com)
+and self-custody Bitcoin wallets.
 <br />
 <br />
 [Getting Started](#getting-started) •
@@ -29,12 +30,17 @@ Currently implemented for [Coinbase](https://coinbase.com),
 
 * [Getting Started](#getting-started)
   * [Environment Variables](#environment-variables)
+  * [Configuration File](#configuration-file)
+  * [Self-Hosted Ghostfolio Currencies](#self-hosted-ghostfolio-currencies)
   * [Docker](#docker)
   * [Docker Compose](#docker-compose)
   * [Kubernetes](#kubernetes)
+* [Self-Custody Wallets](#self-custody-wallets)
 * [Interactive Brokers Flex Queries and Caveats](#interactive-brokers-flex-queries-and-caveats)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
+  * [Continuous Integration](#continuous-integration)
+  * [Local Ghostfolio](#local-ghostfolio)
   * [Top contributors](#top-contributors)
 * [Acknowledgments](#acknowledgments)
 * [License](#license)
@@ -53,7 +59,8 @@ totally (see [Interactive Brokers Flex Queries and Caveats](#interactive-brokers
 for the only exception).
 
 It'll start by getting (or creating) accounts for each source
-(`Coinbase`, `Interactive Brokers` or `Tastytrade`) from Ghostfolio,
+(`Coinbase`, `Interactive Brokers`, `Tastytrade`, or each
+[self-custody wallet](#self-custody-wallets) by its name) from Ghostfolio,
 and from that it'll start adding trading transactions and/or dividends.
 
 This plugin runs completely in the background, and is provided as
@@ -68,6 +75,7 @@ Start by setting up the appropriate environment variables, listed below.
 | -------------------------- | ------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `COINBASE_API_KEY_ID`      | `string`            |                       | The _Coinbase_ API Key.                                                                                                                                         |
 | `COINBASE_SECRET`          | `string`            |                       | The _Coinbase_ Secret. It must be generated according to the <a href="https://docs.cdp.coinbase.com/coinbase-app/authentication-authorization/api-key-authentication#creating-api-keys" target="_blank">Coinbase API official documentation</a>.|
+| `GHOSTCOMPANION_CONFIG`    | `string` (optional) | `ghostcompanion.yaml` | Path to the [configuration file](#configuration-file), relative to the working directory (`/app` in the container). |
 | `GHOSTFOLIO_ACCOUNT_TOKEN` | `string`            |                       | The _Ghostfolio_ Account Token.                                                                                                                                         |
 | `GHOSTFOLIO_BASE_URL`      | `string` (optional) | "<https://ghostfol.io>" | The _Ghostfolio_ URL. If you're self hosting you should change it for your particular instance URL, otherwise all data will be exported to _Ghostfolio_ cloud offering. |
 | `IBKR_QUERY`               | `string`            |                       | The _Interactive Brokers_ Flex Query ID.                                                                                                                                              |
@@ -75,6 +83,7 @@ Start by setting up the appropriate environment variables, listed below.
 | `TASTYTRADE_CLIENT_SECRET` | `string`            |                       | The _Tastytrade_ Client Secret.                                                                                                                                              |
 | `TASTYTRADE_REFRESH_TOKEN` | `string`            |                       | The _Tastytrade_ Refresh Token.                                                                                                                                              |
 | `LOG_LEVEL`                | `string` (optional) | `INFO`                | Logging verbosity: DEBUG, INFO, WARNING, ERROR, or CRITICAL. |
+| `MEMPOOL_BASE_URL`         | `string` (optional) | "<https://mempool.space/api>" | Esplora-compatible API used to read [self-custody wallets](#self-custody-wallets) from the blockchain. Point it at your own node to keep your addresses private. |
 
 For how to generate the TastyTrade variables, please refer to [this documentation](https://tastyworks-api.readthedocs.io/en/latest/sessions.html).
 For how to generate the Interactive Brokers variables, please refer to
@@ -82,6 +91,52 @@ For how to generate the Interactive Brokers variables, please refer to
 
 If you don't wish to use all available providers when importing transactions,
 simply don't provide the environment variables related to it.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+### Configuration File
+
+Settings that don't fit in environment variables live in an optional YAML file,
+`ghostcompanion.yaml` by default (see
+[`ghostcompanion.example.yaml`](https://github.com/OliRafa/ghostcompanion/blob/main/ghostcompanion.example.yaml)):
+
+```yaml
+# Rename symbols before exporting to Ghostfolio: <source symbol>: <Ghostfolio symbol>.
+symbol_mapping:
+  EURN: CMBT
+
+# Self-custody wallets, each tracked as its own Ghostfolio account.
+wallets:
+  - name: Cold Storage
+    network: bitcoin   # the only network supported so far
+    addresses:         # every address the wallet uses, change addresses included
+      - bc1q...
+      - bc1q...
+```
+
+Wallet names must be unique and can't reuse a broker account name
+(`Coinbase`, `Interactive Brokers`, `Tastytrade`), and an address can belong to a
+single wallet. See [Self-Custody Wallets](#self-custody-wallets).
+
+In the container the file is read from `/app/ghostcompanion.yaml`, so mount it
+there (e.g. `-v ./ghostcompanion.yaml:/app/ghostcompanion.yaml:ro`).
+
+> **Upgrading from `symbol_mapping.yaml`:** that file is no longer read. Move its
+> entries under the `symbol_mapping` key of `ghostcompanion.yaml`; GhostCompanion
+> refuses to start while only the old file is present.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+### Self-Hosted Ghostfolio Currencies
+
+Activities keep the currency they were paid in (e.g. Coinbase buys paid in EUR),
+and Ghostfolio converts them using its own exchange rates. A self-hosted instance
+only gathers rates for the currencies of its accounts and asset profiles, not of
+activities, so an activity in any other currency is valued at 0, which breaks
+investment, average price and performance. Add each of those currencies (as an
+admin) under **Admin Control → Market Data → Add Asset Profile → Add Currency**,
+which also gathers its exchange rates. The [Ghostfolio cloud](https://ghostfol.io)
+already has them.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -195,6 +250,48 @@ spec:
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## Self-Custody Wallets
+
+Each wallet in the [configuration file](#configuration-file) becomes a Ghostfolio
+account with the wallet's name, filled from its confirmed on-chain transactions
+(read from [mempool.space](https://mempool.space) or `MEMPOOL_BASE_URL`):
+
+* **Every move is priced at market**, the way Coinbase itself accounts for coins
+  moving in and out: coins leaving an account are sold, coins arriving are
+  bought. For Coinbase sends and receives that's Coinbase's own value of the
+  transaction; for wallets, that day's closing price (Yahoo Finance, in USD).
+* **Transfers between your own accounts** (e.g. Coinbase withdrawals to the
+  wallet, or the other way around) are recognized by their transaction id. The
+  source sells the coins and the destination buys them at the same price, on the
+  day they were sent, so the destination's cost is the coins' value when they
+  arrived. Coinbase withdrawals to a wallet show up once the transaction
+  confirms.
+* **Network fees** paid by the wallet are sold for nothing, as Coinbase's are.
+
+List every address the wallet uses, change addresses included: coins sent to an
+address that isn't listed count as sold, so a payment's change sent to an
+unlisted address looks like coins leaving the wallet, and a Coinbase withdrawal
+to an unlisted wallet of yours books a sale instead of a transfer. When a
+transaction spends listed and unlisted addresses together, GhostCompanion logs a
+warning naming the unlisted ones.
+
+What to expect in Ghostfolio:
+
+* A transfer realizes a gain or loss on the sending account: Ghostfolio compares
+  the sale's market price with that account's average buy price, as the Coinbase
+  app does for withdrawals.
+* The receiving wallet starts from the coins' value on arrival, so its
+  performance counts what happened after the transfer.
+* Ghostfolio has no notion of transfers, so a holding's combined figures across
+  accounts (investment, average price) don't add up to the per-account ones.
+
+> **Privacy:** a public block explorer sees every address it's asked about, all
+> at once and from your IP, which links them to each other and to you. Pointing
+> `MEMPOOL_BASE_URL` at your own [mempool](https://github.com/mempool/mempool) or
+> [electrs](https://github.com/Blockstream/electrs) instance avoids that.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Interactive Brokers Flex Queries and Caveats
 
 Current implementation for getting Interactive Brokers transactions
@@ -232,7 +329,11 @@ with new transactions.
 * [-] Coinbase
   * [x] Crypto buys and sells
   * [x] Crypto transaction fees
+  * [x] Transfers to and from self-custody wallets
   * [ ] Account balance
+* [-] Self-custody wallets
+  * [x] Bitcoin
+  * [ ] Other networks
 * [-] Interactive Brokers
   * [x] Stock buys and sells
   * [ ] Forward share splits
@@ -277,6 +378,24 @@ runs as the `pre-commit` and `pre-push` git hooks and on GitHub Actions, so
 whatever passes locally passes CI. Run `./scripts/setup-hooks.sh` once after
 cloning to enable the hooks; run `./scripts/ci.sh` any time to reproduce CI.
 
+### Local Ghostfolio
+
+The e2e suite (and manual testing) needs a Ghostfolio instance. Spin one up
+locally with:
+
+```sh
+docker compose -f docker-compose.dev.yml up -d --wait
+```
+
+Then set `GHOSTFOLIO_BASE_URL=http://localhost:3333` in your `.env`. Without a
+`GHOSTFOLIO_ACCOUNT_TOKEN` the e2e suite creates a throwaway user and deletes it
+at the end; with one, that user's accounts and activities are wiped before and
+after the run. To get a token for manual testing, create a user with
+`curl -X POST http://localhost:3333/api/v1/user` and use the returned
+`accessToken` (the first user created is the instance admin). If your
+activities use other currencies than USD, add them as described in
+[Self-Hosted Ghostfolio Currencies](#self-hosted-ghostfolio-currencies).
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Top contributors
@@ -295,6 +414,7 @@ for the API Python wrapper.
 * [Tastytrade](https://tastytrade.com) for the API and
 [tastyware/tastytrade](https://github.com/tastyware/tastytrade)
 for the API Python wrapper.
+* [mempool.space](https://mempool.space) for the blockchain API.
 * [Yahoo Finance](https://finance.yahoo.com) for the API and
 [ranaroussi/yfinance](https://github.com/ranaroussi/yfinance)
 for the API Python wrapper.

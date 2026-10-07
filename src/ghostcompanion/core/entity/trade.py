@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Self, override
+from typing import override
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -52,15 +52,19 @@ class Trade(BaseModel):
         self.inner_unit_price = value
 
     @override
-    def __eq__(self, other: datetime | Self) -> bool:
+    def __eq__(self, other: object) -> bool:
         """To implement 'in' operator"""
-        if (
-            self.executed_at.date() == other.executed_at.date()
-            and self.quantity == other.quantity
-            and self.symbol == other.symbol
-            and self.unit_price == other.unit_price
-            and self.fee == other.fee
-        ):
-            return True
+        if not isinstance(other, Trade):
+            return NotImplemented
 
-        return False
+        # Ghostfolio stores amounts as doubles, so a trade read back from it only
+        # keeps the digits a double can hold. Comparing at that precision is also
+        # how Ghostfolio itself detects duplicate activities.
+        return (
+            self.executed_at.date() == other.executed_at.date()
+            and self.symbol == other.symbol
+            and self.transaction_type == other.transaction_type
+            and float(self.quantity) == float(other.quantity)
+            and float(self.unit_price) == float(other.unit_price)
+            and float(self.fee) == float(other.fee)
+        )

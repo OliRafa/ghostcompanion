@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from pytest import fixture
@@ -116,17 +116,127 @@ class TestGetTrades(CoinbaseProviderFactory):
         assert trade.quantity == Decimal("3.0905425")
         assert trade.value == Decimal("0.0")
 
-    def should_treat_networks_fees_as_sells_with_zero_gain(self):
+    def should_leave_sends_to_movements(self):
         trades = self.coinbase_provider.get_trades("BTC")
 
-        network_fees = list(filter(lambda x: x.description == "Network Fee", trades))
+        transactions = self.coinbase_provider.coinbase_api.get_transactions("BTC")
+        assert len(trades) == sum(1 for x in transactions if x["type"] != "send")
 
-        assert all(
-            trade.transaction_type == TransactionType.SELL for trade in network_fees
+
+def build_send(
+    amount: str,
+    native_amount: str,
+    network: dict | None = None,
+    **fields,
+) -> dict:
+    return {
+        "amount": {"amount": amount, "currency": "BTC"},
+        "created_at": "2026-08-21T19:14:38Z",
+        "native_amount": {"amount": native_amount, "currency": "USD"},
+        "network": network,
+        "resource": "transaction",
+        "status": "completed",
+        "type": "send",
+        **fields,
+    }
+
+
+class TestGetMovements(CoinbaseProviderFactory):
+    def movements_for(self, *transactions: dict) -> list:
+        self.coinbase_provider.coinbase_api._transactions = list(transactions)
+        return self.coinbase_provider.get_movements("BTC")
+
+    def when_sending_on_chain_should_debit_amount_net_of_fee(self):
+        [movement] = self.movements_for(
+            build_send(
+                "-0.00724451",
+                "-558.74",
+                {
+                    "hash": "AB" * 32,
+                    "network_name": "bitcoin",
+                    "status": "pending",
+                    "transaction_fee": {"amount": "0.00001029", "currency": "BTC"},
+                },
+                to={"address": "bc1qdestination", "resource": "address"},
+            )
         )
-        assert all(trade.value == Decimal("0") for trade in network_fees)
 
-        assert network_fees[0].quantity == Decimal("0.03497583")
+        assert movement.account == "Coinbase"
+        assert movement.quantity == Decimal("-0.00723422")
+        assert movement.fee == Decimal("0.00001029")
+        assert movement.destination_address == "bc1qdestination"
+        assert movement.transaction_id == "ab" * 32
+        assert movement.market_unit_price == Decimal("558.74") / Decimal("0.00724451")
+        assert movement.currency == "USD"
+        assert movement.executed_at == datetime(
+            2026, 8, 21, 19, 14, 38, tzinfo=timezone.utc
+        )
+
+    def when_receiving_on_chain_should_credit_amount(self):
+        [movement] = self.movements_for(
+            build_send(
+                "0.01",
+                "600.00",
+                {"hash": "cd" * 32, "network_name": "bitcoin", "status": "confirmed"},
+            )
+        )
+
+        assert movement.quantity == Decimal("0.01")
+        assert movement.fee == Decimal("0")
+        assert movement.destination_address is None
+        assert movement.market_unit_price == Decimal("60000")
+
+    def when_send_is_off_chain_should_have_no_transaction_id(self):
+        [movement] = self.movements_for(
+            build_send(
+                "-0.01",
+                "-600.00",
+                {"status": "off_blockchain"},
+                to={"email": "someone@example.com", "resource": "email"},
+            )
+        )
+
+        assert movement.transaction_id is None
+        assert movement.quantity == Decimal("-0.01")
+
+    def when_fee_is_paid_in_another_coin_should_charge_it_separately(self):
+        movements = self.movements_for(
+            build_send(
+                "-0.01",
+                "-600.00",
+                {
+                    "hash": "ef" * 32,
+                    "transaction_fee": {"amount": "0.001", "currency": "ETH"},
+                },
+                to={"address": "bc1qdestination", "resource": "address"},
+            )
+        )
+
+        assert [(x.symbol, x.quantity, x.fee) for x in movements] == [
+            ("BTC", Decimal("-0.01"), Decimal("0")),
+            ("ETH", Decimal("0"), Decimal("0.001")),
+        ]
+
+    def should_ignore_coinbase_earn_rewards(self):
+        movements = self.movements_for(
+            build_send("0.01", "600.00", **{"from": {"name": "Coinbase Earn"}})
+        )
+
+        assert movements == []
+
+    def should_ignore_sends_that_did_not_complete(self):
+        movements = self.movements_for(
+            build_send("-0.01", "-600.00", {"hash": "ab" * 32}, status="canceled")
+        )
+
+        assert movements == []
+
+    def should_ignore_trades(self):
+        movements = self.movements_for(
+            {**build_send("-0.01", "-600.00"), "type": "sell"},
+        )
+
+        assert movements == []
 
 
 class TestGetCurrentCashBalance(CoinbaseProviderFactory):
