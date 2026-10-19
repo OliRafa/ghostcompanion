@@ -5,6 +5,7 @@ from ghostcompanion.configs.logging_config import configure_logging
 from ghostcompanion.configs.settings import Settings
 from ghostcompanion.core.provider.blockchain import BlockchainProvider
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
+from ghostcompanion.core.provider.evm_wallet import EvmWalletProvider
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider
 from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
@@ -32,6 +33,7 @@ from ghostcompanion.infra.dividends_provider.dividends_provider_adapter import (
     DividendsProviderAdapter,
 )
 from ghostcompanion.infra.dividends_provider.yahoo_finance_api import YahooFinanceApi
+from ghostcompanion.infra.evm.alchemy_api import AlchemyApi
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 from ghostcompanion.infra.ghostfolio.ghostfolio_api import GhostfolioApi
 from ghostcompanion.infra.interactive_brokers.interactive_brokers_api import (
@@ -78,13 +80,17 @@ if __name__ == "__main__":
         CoinbaseProvider(CoinbaseApi()) if _should_run_coinbase_importer() else None
     )
     if coinbase_provider or config_repository.get_wallets():
+        market_prices = MarketPriceAdapter(YahooFinanceApi())
         import_crypto_transactions = ImportCryptoTransactions(
-            BlockchainProvider(
-                MempoolSpaceApi(), MarketPriceAdapter(YahooFinanceApi())
-            ),
+            BlockchainProvider(MempoolSpaceApi(), market_prices),
             coinbase_provider,
             config_repository,
             ghostfolio,
+            (
+                EvmWalletProvider(AlchemyApi(), market_prices)
+                if Settings.Evm.ALCHEMY_API_KEY
+                else None
+            ),
         )
 
         for portfolio in import_crypto_transactions.execute():

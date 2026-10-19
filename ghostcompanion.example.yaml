@@ -12,3 +12,21 @@ wallets:
     addresses:
       - bc1qexampleaddressaaaaaaaaaaaaaaaaaaaaaaaa
       - bc1qexampleaddressbbbbbbbbbbbbbbbbbbbbbbbb
+  # An EVM wallet: one account for the same address on every network listed.
+  - name: DeFi Wallet
+    networks: [ethereum, base]
+    addresses:
+      - "0x1111111111111111111111111111111111111111"
+
+# Tokens EVM wallets track besides USDC and ETH. A well-known one needs no
+# contract; any other gives its network and contract (never its name: scams copy
+# names). `price` is the Yahoo coin pricing moves that aren't swaps.
+tokens:
+  cbBTC:
+    symbol: CBBTC
+    data_source: GHOSTFOLIO
+    price: BTC
+  ABTC:
+    network: base
+    contract: "0x3764f07752384450576c6d8b027d06ffa29e5ae9"
+    data_source: GHOSTFOLIO

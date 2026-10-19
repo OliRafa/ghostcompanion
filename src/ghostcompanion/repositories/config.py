@@ -4,10 +4,17 @@ from pathlib import Path
 from typing import Self, final
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    PrivateAttr,
+    ValidationError,
+    model_validator,
+)
 
 from ghostcompanion.core.entity.symbol_change import SymbolChange
-from ghostcompanion.core.entity.wallet import Wallet
+from ghostcompanion.core.entity.token import DEFAULT_TOKENS, WELL_KNOWN_CONTRACTS, Token
+from ghostcompanion.core.entity.wallet import Network, Wallet
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +29,52 @@ class InvalidConfigException(Exception):
     ...
 
 
+class _TokenEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # Both are needed unless the token is a well-known one.
+    network: Network | None = None
+    contract: str | None = None
+    symbol: str | None = None
+    data_source: str = "YAHOO"
+    price: str | None = None
+
+    def resolve(self, name: str) -> list[Token]:
+        if self.network or self.contract:
+            if not (self.network and self.contract):
+                raise ValueError(f"token `{name}` needs both `network` and `contract`")
+            contracts = {self.network: self.contract}
+        elif name in WELL_KNOWN_CONTRACTS:
+            contracts = WELL_KNOWN_CONTRACTS[name]
+        else:
+            well_known = ", ".join(WELL_KNOWN_CONTRACTS)
+            raise ValueError(
+                f"token `{name}` isn't a well-known one ({well_known}):"
+                " give its `network` and `contract`"
+            )
+
+        symbol = self.symbol or name
+        price = self.price or (symbol if self.data_source.upper() == "YAHOO" else None)
+        return [
+            Token(
+                network=network,
+                contract=contract,
+                symbol=symbol,
+                data_source=self.data_source,
+                price_symbol=price,
+            )
+            for network, contract in contracts.items()
+        ]
+
+
 class _ConfigFile(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     symbol_mapping: dict[str, str] = {}
+    tokens: dict[str, _TokenEntry] = {}
     wallets: list[Wallet] = []
+
+    _tokens: list[Token] = PrivateAttr(default_factory=list)
 
     @model_validator(mode="after")
     def _validate_wallets(self) -> Self:
@@ -44,6 +92,25 @@ class _ConfigFile(BaseModel):
 
         return self
 
+    @model_validator(mode="after")
+    def _resolve_tokens(self) -> Self:
+        configured: dict[tuple[Network, str | None], Token] = {}
+        for name, entry in self.tokens.items():
+            for token in entry.resolve(name):
+                if not token.network.is_evm:
+                    raise ValueError(f"token `{name}`: only EVM networks have tokens")
+                key = (token.network, token.contract)
+                if key in configured:
+                    raise ValueError(
+                        f"tokens `{configured[key].symbol}` and `{name}` are the same"
+                        f" contract on {token.network.value}"
+                    )
+                configured[key] = token
+
+        defaults = {(token.network, token.contract): token for token in DEFAULT_TOKENS}
+        self._tokens = list({**defaults, **configured}.values())
+        return self
+
 
 @final
 class ConfigRepository:
@@ -58,6 +125,11 @@ class ConfigRepository:
 
     def get_wallets(self) -> list[Wallet]:
         return self._config.wallets
+
+    def get_tokens(self) -> list[Token]:
+        """The tokens EVM wallets track: USDC and each network's own coin, plus
+        the ones configured, which can also override those two."""
+        return self._config._tokens
 
     @cached_property
     def _config(self) -> _ConfigFile:

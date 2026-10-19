@@ -47,13 +47,14 @@ def build_movement(
     transaction_id: str | None = TRANSACTION_ID,
     **fields,
 ) -> OnChainMovement:
+    price = fields.pop("market_unit_price", "61000")
     return OnChainMovement(
         account=account,
         currency=fields.pop("currency", "USD"),
         executed_at=executed_at,
-        market_unit_price=Decimal(fields.pop("market_unit_price", "61000")),
+        market_unit_price=price and Decimal(price),
         quantity=Decimal(quantity),
-        symbol="BTC",
+        symbol=fields.pop("symbol", "BTC"),
         transaction_id=transaction_id,
         **fields,
     )
@@ -283,3 +284,158 @@ class TestUnconfirmedTransfer(CryptoLedgerFactory):
         ]
         assert self.trades("Cold Storage") == []
         assert "isn't confirmed yet" in caplog.text
+
+    def when_wallet_does_not_track_the_coin_should_book_a_sale(self):
+        self.ledger.tracked_symbols = {"Cold Storage": {"USDC"}}
+
+        self.ledger.book(
+            [
+                build_movement(
+                    "Coinbase",
+                    "-0.004",
+                    at(1),
+                    destination_address=COLD_STORAGE_ADDRESS,
+                )
+            ]
+        )
+
+        assert self.summary("Coinbase", f"Sent to {COLD_STORAGE_ADDRESS}") == [
+            (TransactionType.SELL, Decimal("0.004"), Decimal("61000"), "USD")
+        ]
+
+
+class TestSwaps(CryptoLedgerFactory):
+    def swap(self, given: dict, got: dict):
+        self.ledger.book(
+            [
+                build_movement("Cold Storage", executed_at=at(2), **given),
+                build_movement("Cold Storage", executed_at=at(2), **got),
+            ]
+        )
+
+    def booked(self, symbol: str) -> list[tuple]:
+        portfolio = self.portfolios["Cold Storage"]
+        return [
+            (x.transaction_type, x.quantity, x.unit_price, x.data_source, x.description)
+            for x in portfolio.get_trades(symbol)
+        ]
+
+    def should_buy_at_the_price_the_swap_got(self):
+        self.swap(
+            {"quantity": "-340", "symbol": "USDC", "market_unit_price": "0.9998"},
+            {"quantity": "0.005", "symbol": "CBBTC", "data_source": "GHOSTFOLIO"},
+        )
+
+        assert self.booked("USDC") == [
+            (
+                TransactionType.SELL,
+                Decimal("340"),
+                Decimal("0.9998"),
+                "YAHOO",
+                "Swapped for CBBTC",
+            )
+        ]
+        # 340 USDC at 0.9998 for 0.005 CBBTC.
+        assert self.booked("CBBTC") == [
+            (
+                TransactionType.BUY,
+                Decimal("0.005"),
+                Decimal("67986.4"),
+                "GHOSTFOLIO",
+                "Swapped from USDC",
+            )
+        ]
+
+    def when_coin_got_has_no_price_should_value_it_from_the_coin_given(self):
+        self.swap(
+            {"quantity": "-500", "symbol": "USDC", "market_unit_price": "1"},
+            {"quantity": "480", "symbol": "ABTC", "market_unit_price": None},
+        )
+
+        [(_, quantity, unit_price, _, _)] = self.booked("ABTC")
+        assert (quantity, unit_price) == (
+            Decimal("480"),
+            Decimal("500") / Decimal("480"),
+        )
+
+    def when_coin_given_has_no_price_should_value_it_from_the_coin_got(self):
+        self.swap(
+            {"quantity": "-480", "symbol": "ABTC", "market_unit_price": None},
+            {"quantity": "600", "symbol": "USDC", "market_unit_price": "1"},
+        )
+
+        [(transaction_type, quantity, unit_price, _, _)] = self.booked("ABTC")
+        assert transaction_type == TransactionType.SELL
+        assert unit_price * quantity == Decimal("600")
+
+    def when_neither_coin_has_a_price_should_book_nothing(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            self.swap(
+                {"quantity": "-480", "symbol": "ABTC", "market_unit_price": None},
+                {"quantity": "1", "symbol": "XYZ", "market_unit_price": None},
+            )
+
+        assert self.portfolios["Cold Storage"].get_symbols() == []
+        assert "neither" in caplog.text
+
+    def should_still_sell_the_fee_of_a_swap(self):
+        self.ledger.book(
+            [
+                build_movement(
+                    "Cold Storage",
+                    "0",
+                    at(2),
+                    symbol="ETH",
+                    fee=Decimal("0.0003"),
+                ),
+                build_movement(
+                    "Cold Storage", "-340", at(2), symbol="USDC", market_unit_price="1"
+                ),
+                build_movement("Cold Storage", "0.005", at(2), symbol="CBBTC"),
+            ]
+        )
+
+        assert [
+            x.description for x in self.portfolios["Cold Storage"].get_trades("ETH")
+        ] == ["Network Fee"]
+        assert len(self.booked("CBBTC")) == 1
+
+
+class TestUnpricedCoins(CryptoLedgerFactory):
+    def when_coin_has_no_price_outside_a_swap_should_skip_it(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            self.ledger.book(
+                [
+                    build_movement(
+                        "Cold Storage",
+                        "10",
+                        at(2),
+                        symbol="ABTC",
+                        market_unit_price=None,
+                    )
+                ]
+            )
+
+        assert not self.portfolios["Cold Storage"].has_asset("ABTC")
+        assert "has no price" in caplog.text
+
+
+class TestPerCoinPairing(CryptoLedgerFactory):
+    def should_pair_a_transfer_only_with_the_same_coin(self):
+        self.ledger.book(
+            [
+                build_movement(
+                    "Coinbase", "-100", at(1), symbol="USDC", market_unit_price="1"
+                ),
+                build_movement(
+                    "Cold Storage", "100", at(1), symbol="USDC", market_unit_price="1"
+                ),
+                build_movement(
+                    "Cold Storage", "0", at(1), symbol="ETH", fee=Decimal("0.0001")
+                ),
+            ]
+        )
+
+        assert [
+            x.description for x in self.portfolios["Cold Storage"].get_trades("USDC")
+        ] == ["Transfer from Coinbase"]

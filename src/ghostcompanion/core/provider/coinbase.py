@@ -130,7 +130,7 @@ class CoinbaseProvider:
             / abs(amount),
             quantity=amount + fee if amount < 0 else amount,
             symbol=symbol,
-            transaction_id=transaction_hash.lower() if transaction_hash else None,
+            transaction_id=transaction_hash,
         )
 
         return [movement] + fee_movements

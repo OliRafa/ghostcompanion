@@ -14,6 +14,10 @@ class CoinbaseSettings:
     SECRET: str = getenv("COINBASE_SECRET", "").replace("\\n", "\n")
 
 
+class EvmSettings:
+    ALCHEMY_API_KEY: str = getenv("ALCHEMY_API_KEY", "")
+
+
 class GhostfolioSettings:
     BASE_URL: str = f"{getenv('GHOSTFOLIO_BASE_URL', 'https://ghostfol.io')}/api/v1"
     ACCOUNT_TOKEN: str = getenv("GHOSTFOLIO_ACCOUNT_TOKEN", "")
@@ -34,6 +38,7 @@ class Settings(GhostfolioSettings, TastytradeSettings):
     LOG_LEVEL: str = getenv("LOG_LEVEL", "INFO")
     Blockchain = BlockchainSettings
     Coinbase = CoinbaseSettings
+    Evm = EvmSettings
     Ghostfolio = GhostfolioSettings
     InteractiveBrokers = InteractiveBrokersSettings
     Tastytrade = TastytradeSettings

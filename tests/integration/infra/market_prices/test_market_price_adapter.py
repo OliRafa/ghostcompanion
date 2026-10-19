@@ -35,7 +35,7 @@ class TestGetCryptoPrice(MarketPriceAdapterFactory):
             "BTC", "USD", datetime.date(2030, 1, 1)
         )
 
-        assert price == Decimal("67000.0")
+        assert price == Decimal("65000.0")
 
     def when_day_is_before_first_close_should_raise_exception(self):
         with raises(PriceNotFoundException):

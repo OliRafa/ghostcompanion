@@ -14,7 +14,7 @@ Transfer transactions from numerous sources to [Ghostfolio](https://github.com/g
 
 Currently implemented for [Coinbase](https://coinbase.com),
 [Interactive Brokers (IBKR)](https://www.interactivebrokers.com), [Tastytrade](https://tastytrade.com)
-and self-custody Bitcoin wallets.
+and self-custody Bitcoin, Ethereum and Base wallets.
 <br />
 <br />
 [Getting Started](#getting-started) •
@@ -36,6 +36,7 @@ and self-custody Bitcoin wallets.
   * [Docker Compose](#docker-compose)
   * [Kubernetes](#kubernetes)
 * [Self-Custody Wallets](#self-custody-wallets)
+  * [Ethereum and Base Wallets](#ethereum-and-base-wallets)
 * [Interactive Brokers Flex Queries and Caveats](#interactive-brokers-flex-queries-and-caveats)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
@@ -73,6 +74,7 @@ Start by setting up the appropriate environment variables, listed below.
 
 | Name                       | Type                | Default Value         | Description                                                                                                                                                             |
 | -------------------------- | ------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ALCHEMY_API_KEY`          | `string` (optional) |                       | [Alchemy](https://www.alchemy.com) API key (the free plan is enough), with Ethereum and Base enabled. Needed to read [EVM wallets](#ethereum-and-base-wallets). |
 | `COINBASE_API_KEY_ID`      | `string`            |                       | The _Coinbase_ API Key.                                                                                                                                         |
 | `COINBASE_SECRET`          | `string`            |                       | The _Coinbase_ Secret. It must be generated according to the <a href="https://docs.cdp.coinbase.com/coinbase-app/authentication-authorization/api-key-authentication#creating-api-keys" target="_blank">Coinbase API official documentation</a>.|
 | `GHOSTCOMPANION_CONFIG`    | `string` (optional) | `ghostcompanion.yaml` | Path to the [configuration file](#configuration-file), relative to the working directory (`/app` in the container). |
@@ -108,15 +110,31 @@ symbol_mapping:
 # Self-custody wallets, each tracked as its own Ghostfolio account.
 wallets:
   - name: Cold Storage
-    network: bitcoin   # the only network supported so far
+    network: bitcoin
     addresses:         # every address the wallet uses, change addresses included
       - bc1q...
       - bc1q...
+  - name: DeFi Wallet
+    networks: [ethereum, base]   # one account for the same address on both
+    addresses:
+      - "0x..."
+
+# Tokens EVM wallets track besides USDC and ETH (see "Ethereum and Base wallets").
+tokens:
+  cbBTC:                         # well known: no contract needed
+    symbol: CBBTC
+    data_source: GHOSTFOLIO
+    price: BTC
+  ABTC:                          # anything else: its network and contract
+    network: base
+    contract: "0x3764f07752384450576c6d8b027d06ffa29e5ae9"
+    data_source: GHOSTFOLIO
 ```
 
 Wallet names must be unique and can't reuse a broker account name
 (`Coinbase`, `Interactive Brokers`, `Tastytrade`), and an address can belong to a
-single wallet. See [Self-Custody Wallets](#self-custody-wallets).
+single wallet. A wallet is either on `bitcoin` or on EVM networks (`ethereum`,
+`base`). See [Self-Custody Wallets](#self-custody-wallets).
 
 In the container the file is read from `/app/ghostcompanion.yaml`, so mount it
 there (e.g. `-v ./ghostcompanion.yaml:/app/ghostcompanion.yaml:ro`).
@@ -288,7 +306,36 @@ What to expect in Ghostfolio:
 > **Privacy:** a public block explorer sees every address it's asked about, all
 > at once and from your IP, which links them to each other and to you. Pointing
 > `MEMPOOL_BASE_URL` at your own [mempool](https://github.com/mempool/mempool) or
-> [electrs](https://github.com/Blockstream/electrs) instance avoids that.
+> [electrs](https://github.com/Blockstream/electrs) instance avoids that. The
+> same goes for Alchemy and the addresses of EVM wallets.
+
+### Ethereum and Base wallets
+
+EVM wallets are read through [Alchemy](https://www.alchemy.com)
+(`ALCHEMY_API_KEY`), on every network the wallet lists:
+
+* **Tokens are recognized by their contract only.** Names and symbols are free
+  text, which address-poisoning scams exploit: lookalike tokens (`USDꓚ`,
+  `ÚSDС`), transfers spoofed in the wallet's name and zero-value transfers are
+  all ignored. USDC and each network's own coin (ETH) are tracked out of the
+  box; add others under `tokens`. A well-known one (`cbBTC`) needs no contract;
+  any other needs its `network` and `contract`.
+* **Each token says how Ghostfolio knows it:** its `symbol`, its `data_source`
+  (`YAHOO` by default, which names coins as `<SYMBOL>USD` pairs) and, for moves
+  that aren't swaps, the Yahoo coin pricing them (`price`; e.g. `BTC` for
+  cbBTC). A token without a `price` is only booked when a swap tells what it
+  cost.
+* **Swaps** (one coin given for another in a single transaction) sell the coin
+  given and buy the one got at the price the swap actually got. That also prices
+  coins with no market quote of their own, such as vault shares.
+* **Network fees** are sold for nothing in ETH, including Base's L1 data fee, for
+  every transaction the wallet signed; a failed one only costs its fee.
+* **DeFi positions aren't modelled yet:** coins lent to or borrowed from a
+  protocol (e.g. Aave) count as sent and received.
+
+Tokens with a data source other than `YAHOO` need Ghostfolio to price them, e.g.
+through a price proxy behind its `GHOSTFOLIO` data source (`PROXY_ROUTES` and
+`API_KEY_GHOSTFOLIO` admin settings), with the same symbols.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -333,7 +380,8 @@ with new transactions.
   * [ ] Account balance
 * [-] Self-custody wallets
   * [x] Bitcoin
-  * [ ] Other networks
+  * [x] Ethereum and Base (USDC, ETH and configured tokens, swaps included)
+  * [ ] DeFi positions (lending, borrowing)
 * [-] Interactive Brokers
   * [x] Stock buys and sells
   * [ ] Forward share splits
@@ -415,6 +463,7 @@ for the API Python wrapper.
 [tastyware/tastytrade](https://github.com/tastyware/tastytrade)
 for the API Python wrapper.
 * [mempool.space](https://mempool.space) for the blockchain API.
+* [Alchemy](https://www.alchemy.com) for the EVM chain data API.
 * [Yahoo Finance](https://finance.yahoo.com) for the API and
 [ranaroussi/yfinance](https://github.com/ranaroussi/yfinance)
 for the API Python wrapper.

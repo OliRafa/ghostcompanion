@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from collections.abc import Iterable
 from decimal import Decimal
 from typing import final
@@ -22,13 +23,22 @@ class CryptoLedger:
     accounts for moves in and out of an account: coins leaving one of the user's
     accounts are sold, coins arriving are bought. Movements of one transaction
     between two of the user's accounts are a transfer, sold by the source and
-    bought by the destination at the same price. Network fees are sold for
-    nothing.
+    bought by the destination at the same price. An account giving one coin for
+    another in a single transaction swapped them, at the price it got. Network
+    fees are sold for nothing.
     """
 
-    def __init__(self, portfolios: dict[str, Portfolio], wallets: list[Wallet]):
+    def __init__(
+        self,
+        portfolios: dict[str, Portfolio],
+        wallets: list[Wallet],
+        tracked_symbols: dict[str, set[str]] | None = None,
+    ):
         self.portfolios = portfolios
         self.wallets = wallets
+        # What each wallet's own chain data can show; a coin sent to a wallet
+        # that doesn't track it will never show up there. None tracks everything.
+        self.tracked_symbols = tracked_symbols
 
     def book(self, movements: list[OnChainMovement]) -> None:
         for transaction in self._group_by_transaction(movements):
@@ -51,6 +61,72 @@ class CryptoLedger:
         for movement in movements:
             if movement.fee > 0:
                 self._book_network_fee(movement)
+
+        by_symbol: dict[str, list[OnChainMovement]] = defaultdict(list)
+        for movement in self._book_swaps([x for x in movements if x.quantity != 0]):
+            by_symbol[movement.symbol].append(movement)
+
+        for same_coin in by_symbol.values():
+            self._book_coin(same_coin)
+
+    def _book_swaps(self, movements: list[OnChainMovement]) -> list[OnChainMovement]:
+        """Books the swaps among the movements and returns the rest."""
+        by_account: dict[str, list[OnChainMovement]] = defaultdict(list)
+        for movement in movements:
+            by_account[movement.account].append(movement)
+
+        rest = []
+        for same_account in by_account.values():
+            given = [x for x in same_account if x.quantity < 0]
+            got = [x for x in same_account if x.quantity > 0]
+            if len(given) == 1 and len(got) == 1 and given[0].symbol != got[0].symbol:
+                self._book_swap(given[0], got[0])
+            else:
+                rest += same_account
+
+        return rest
+
+    def _book_swap(self, given: OnChainMovement, got: OnChainMovement):
+        # Whichever side has a market price values the other, so a coin with no
+        # price of its own (a vault share) takes the one it was swapped at.
+        if given.market_unit_price is not None:
+            value = -given.quantity * given.market_unit_price
+        elif got.market_unit_price is not None:
+            value = got.quantity * got.market_unit_price
+        else:
+            logger.warning(
+                f"Transaction {given.transaction_id}: neither {given.symbol} nor"
+                f" {got.symbol} has a price, so the swap isn't booked"
+            )
+            return
+
+        for movement, transaction_type, description in (
+            (given, TransactionType.SELL, f"Swapped for {got.symbol}"),
+            (got, TransactionType.BUY, f"Swapped from {given.symbol}"),
+        ):
+            self._add_trade(
+                movement.account,
+                Trade(
+                    currency=movement.currency,
+                    dataSource=movement.data_source,
+                    description=description,
+                    executed_at=given.executed_at,
+                    fee=Decimal("0"),
+                    quantity=abs(movement.quantity),
+                    symbol=movement.symbol,
+                    transaction_type=transaction_type,
+                    unit_price=value / abs(movement.quantity),
+                ),
+            )
+
+    def _book_coin(self, movements: list[OnChainMovement]):
+        if unpriced := [x for x in movements if x.market_unit_price is None]:
+            for movement in unpriced:
+                logger.warning(
+                    f"Transaction {movement.transaction_id}: {movement.symbol} has no"
+                    " price and wasn't part of a swap, so it isn't booked"
+                )
+            movements = [x for x in movements if x.market_unit_price is not None]
 
         senders = [x for x in movements if x.quantity < 0]
         receivers = [x for x in movements if x.quantity > 0]
@@ -89,6 +165,7 @@ class CryptoLedger:
             movement.account,
             Trade(
                 currency=movement.currency,
+                dataSource=movement.data_source,
                 description=_NETWORK_FEE_DESCRIPTION,
                 executed_at=movement.executed_at,
                 fee=Decimal("0"),
@@ -105,6 +182,7 @@ class CryptoLedger:
             sender.account,
             Trade(
                 currency=sender.currency,
+                dataSource=sender.data_source,
                 description=f"Sent to {destination}" if destination else "Sent",
                 executed_at=sender.executed_at,
                 fee=Decimal("0"),
@@ -120,6 +198,7 @@ class CryptoLedger:
             receiver.account,
             Trade(
                 currency=receiver.currency,
+                dataSource=receiver.data_source,
                 description="Received",
                 executed_at=receiver.executed_at,
                 fee=Decimal("0"),
@@ -139,6 +218,7 @@ class CryptoLedger:
                 account,
                 Trade(
                     currency=sender.currency,
+                    dataSource=sender.data_source,
                     description=description,
                     executed_at=sender.executed_at,
                     fee=Decimal("0"),
@@ -158,6 +238,11 @@ class CryptoLedger:
             (x for x in self.wallets if x.owns(sender.destination_address)), None
         )
         if wallet is None or wallet.name == sender.account:
+            return False
+        if (
+            self.tracked_symbols is not None
+            and sender.symbol not in self.tracked_symbols.get(wallet.name, set())
+        ):
             return False
 
         logger.warning(

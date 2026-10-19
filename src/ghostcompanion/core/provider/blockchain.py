@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Any
 
 from ghostcompanion.core.entity.onchain_movement import OnChainMovement
-from ghostcompanion.core.entity.wallet import Wallet
+from ghostcompanion.core.entity.wallet import Network, Wallet
 from ghostcompanion.core.ports.blockchain import BlockchainPort
 from ghostcompanion.core.ports.market_prices import MarketPricePort
 
@@ -71,10 +71,10 @@ class BlockchainProvider:
             executed_at=executed_at,
             fee=self._to_coins(fee),
             market_unit_price=self.market_prices.get_crypto_price(
-                wallet.symbol, _CURRENCY, executed_at.date()
+                Network.BITCOIN.native_symbol, _CURRENCY, executed_at.date()
             ),
             quantity=self._to_coins(received - spent + fee),
-            symbol=wallet.symbol,
+            symbol=Network.BITCOIN.native_symbol,
             transaction_id=transaction["txid"],
         )
 
