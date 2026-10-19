@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [3.1.0](https://github.com/OliRafa/ghostcompanion/compare/v3.0.0...v3.1.0) (2026-10-19)
+
+
+### Features
+
+* **crypto:** book Ethereum and Base wallets, swaps included ([16866c3](https://github.com/OliRafa/ghostcompanion/commit/16866c307bf9a3604ff571ed42ec82dd49b1a290))
+
 # [3.0.0](https://github.com/OliRafa/ghostcompanion/compare/v2.6.0...v3.0.0) (2026-10-07)
 
 
