@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [3.2.0](https://github.com/OliRafa/ghostcompanion/compare/v3.1.0...v3.2.0) (2026-10-26)
+
+
+### Features
+
+* **aave:** book what EVM wallets lend and borrow on Aave ([d046b55](https://github.com/OliRafa/ghostcompanion/commit/d046b55660b2d5f1cb35e5d720664c8e24827c57))
+
 # [3.1.0](https://github.com/OliRafa/ghostcompanion/compare/v3.0.0...v3.1.0) (2026-10-19)
 
 
