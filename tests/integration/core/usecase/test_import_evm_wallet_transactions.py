@@ -19,10 +19,15 @@ from tests.infra.coinbase_api import InMemoryCoinbaseApi
 from tests.infra.config_repository import InMemoryConfigRepository
 from tests.infra.evm_chain_api import InMemoryEvmChainApi
 from tests.infra.ghostfolio_api import InMemoryGhostfolioApi
+from tests.infra.lending_market_api import InMemoryLendingMarketApi
 from tests.infra.yahoo_finance_api import InMemoryYahooFinanceApi
 from tests.resources.evm.transfers import (
+    AAVE_RELAYED_TRANSFERS,
+    AAVE_TRANSFERS,
+    BASE_TRANSFERS,
     CBBTC,
     COINBASE_USDC_DEPOSIT,
+    USDC_BASE,
     VAULT_SHARE,
     WALLET,
 )
@@ -166,3 +171,171 @@ class TestMissingProvider:
 
         with raises(ValueError, match="ALCHEMY_API_KEY"):
             use_case.execute()
+
+
+class ImportAaveFactory:
+    transfers = BASE_TRANSFERS + AAVE_TRANSFERS
+
+    @fixture(autouse=True)
+    def initialize_use_case(self):
+        market_prices = MarketPriceAdapter(InMemoryYahooFinanceApi())
+        self.lending_market = InMemoryLendingMarketApi()
+        self.ghostfolio_api = InMemoryGhostfolioApi()
+        self.import_crypto_transactions = ImportCryptoTransactions(
+            BlockchainProvider(InMemoryBlockchainApi([]), market_prices),
+            None,
+            InMemoryConfigRepository(wallets=[DEFI_WALLET], tokens=TOKENS),
+            GhostfolioAdapter(self.ghostfolio_api),
+            EvmWalletProvider(
+                InMemoryEvmChainApi(
+                    {Network.BASE: self.transfers, Network.ETHEREUM: []}
+                ),
+                market_prices,
+                self.lending_market,
+            ),
+        )
+
+    def portfolios(self) -> dict[str, Portfolio]:
+        return {x.account.name: x for x in self.import_crypto_transactions.execute()}
+
+    @staticmethod
+    def holding(portfolio: Portfolio, symbol: str) -> Decimal:
+        signs = {TransactionType.BUY: 1, TransactionType.SELL: -1}
+        return sum(
+            signs[x.transaction_type] * x.quantity
+            for x in portfolio.get_trades(symbol)
+            if x.transaction_type in signs
+        )
+
+
+class TestAave(ImportAaveFactory):
+    @fixture(autouse=True)
+    def set_positions(self, initialize_use_case):
+        # 0.004 supplied and 0.001 withdrawn; 150 borrowed, which Aave rounded
+        # up a unit, and 50.01 repaid, plus 0.035 due.
+        self.lending_market.set_position(WALLET, CBBTC, supplied="0.003")
+        self.lending_market.set_position(WALLET, USDC_BASE, borrowed="100.025001")
+
+    def wallet(self) -> Portfolio:
+        return self.portfolios()["DeFi Wallet"]
+
+    def should_hold_what_the_market_holds_with_the_wallets_own_coins(self):
+        self.lending_market.set_position(WALLET, CBBTC, supplied="0.0031")
+        self.lending_market.set_position(WALLET, USDC_BASE, borrowed="100.030001")
+
+        wallet = self.wallet()
+
+        # 0.002 left in the wallet and 0.0031 in Aave.
+        assert self.holding(wallet, "CBBTC") == Decimal("0.0051")
+        assert self.holding(wallet, "DEBT-USDC") == Decimal("-100.030001")
+
+    def should_book_interest_due_when_it_accrued(self):
+        interest = [
+            (x.executed_at.date().isoformat(), x.quantity)
+            for x in self.wallet().get_trades("DEBT-USDC")
+            if x.description == "Interest due to Aave"
+        ]
+
+        assert interest == [
+            ("2026-04-08", Decimal("0.02")),
+            ("2026-04-08", Decimal("0.015")),
+        ]
+
+    def should_buy_a_repaid_debt_back_for_nothing_with_what_repaid_it_as_fee(self):
+        wallet = self.wallet()
+        paid = [
+            (x.quantity, x.quantity * x.unit_price)
+            for x in wallet.get_trades("USDCUSD")
+            if x.description == "Repaid to Aave"
+        ]
+        repaid = [
+            (x.quantity, x.fee)
+            for x in wallet.get_trades("DEBT-USDC")
+            if x.description == "Repaid to Aave" and x.unit_price == 0
+        ]
+
+        assert len(repaid) == 2
+        assert sorted(repaid) == sorted(paid)
+
+    def should_owe_what_aave_rounded_up_for_nothing(self):
+        rounded = [
+            (x.transaction_type, x.quantity, x.unit_price)
+            for x in self.wallet().get_trades("DEBT-USDC")
+            if x.description == "Rounded up by Aave"
+        ]
+
+        assert rounded == [(TransactionType.SELL, Decimal("0.000001"), Decimal("0"))]
+
+    def when_supplying_or_withdrawing_should_book_nothing(self):
+        wallet = self.wallet()
+
+        # 0.005 swapped for; supplying 0.004 and withdrawing 0.001 moved nothing.
+        assert self.holding(wallet, "CBBTC") == Decimal("0.005")
+        assert [x.description for x in wallet.get_trades("CBBTC")] == [
+            "Swapped from USDC"
+        ]
+
+    def should_book_borrowed_coins_apart_from_received_ones(self):
+        descriptions = [x.description for x in self.wallet().get_trades("USDCUSD")]
+
+        assert descriptions.count("Borrowed from Aave") == 1
+        assert descriptions.count("Repaid to Aave") == 2
+
+    def should_owe_the_debt_with_the_same_descriptions(self):
+        descriptions = [x.description for x in self.wallet().get_trades("DEBT-USDC")]
+
+        assert descriptions.count("Borrowed from Aave") == 1
+        assert descriptions.count("Repaid to Aave") == 2
+
+    def should_keep_debts_under_their_own_symbol(self):
+        debt = self.wallet().get_trades("DEBT-USDC")
+
+        assert {x.data_source for x in debt} == {"GHOSTFOLIO"}
+
+    def should_keep_everything_in_the_wallets_account(self):
+        portfolios = self.portfolios()
+
+        assert list(portfolios) == ["DeFi Wallet"]
+        assert "Aave" not in [x["name"] for x in self.ghostfolio_api.get_accounts()]
+
+
+class TestRelayedAave(ImportAaveFactory):
+    transfers = BASE_TRANSFERS + AAVE_TRANSFERS + AAVE_RELAYED_TRANSFERS
+
+    @fixture(autouse=True)
+    def set_positions(self, initialize_use_case):
+        # 0.004 supplied, 0.001 withdrawn, swapped and repaid with 0.001 and
+        # 0.0011, plus 0.00000002 earned; 150 borrowed, which Aave rounded up a
+        # unit, 50.01 repaid by the wallet and 75 with collateral, plus 0.065 due.
+        self.lending_market.set_position(WALLET, CBBTC, supplied="0.00090002")
+        self.lending_market.set_position(
+            WALLET, USDC_BASE, supplied="68", borrowed="25.055001"
+        )
+
+    def booked(self, symbol: str) -> list[tuple]:
+        wallet = self.portfolios()["DeFi Wallet"]
+        return [(x.description, x.quantity) for x in wallet.get_trades(symbol)]
+
+    def when_collateral_is_swapped_should_swap_it_on_aave(self):
+        assert ("Swapped for USDC on Aave", Decimal("0.001")) in self.booked("CBBTC")
+        assert ("Swapped from CBBTC on Aave", Decimal("68")) in self.booked("USDCUSD")
+
+    def when_collateral_repays_a_debt_should_swap_only_what_aave_kept(self):
+        cbbtc = self.booked("CBBTC")
+
+        assert ("Swapped for DEBT-USDC on Aave", Decimal("0.0010975")) in cbbtc
+        assert not [x for x in cbbtc if x[0].startswith("Transfer")]
+        assert ("Swapped from CBBTC on Aave", Decimal("75")) in self.booked("DEBT-USDC")
+
+    def when_balances_match_the_events_should_catch_up_nothing(self):
+        wallet = self.portfolios()["DeFi Wallet"]
+
+        # 0.0020025 in the wallet, the 0.0000025 Aave sent back included, and
+        # 0.00090002 in Aave.
+        assert self.holding(wallet, "CBBTC") == Decimal("0.00290252")
+        assert self.holding(wallet, "DEBT-USDC") == Decimal("-25.055001")
+        assert all(
+            x.executed_at.year == 2026 and x.executed_at.month == 4
+            for symbol in wallet.get_symbols()
+            for x in wallet.get_trades(symbol)
+        )

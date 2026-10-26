@@ -1,6 +1,7 @@
 import logging
 from typing import final
 
+from ghostcompanion.core.entity.lending import LendingBalance
 from ghostcompanion.core.entity.onchain_movement import OnChainMovement
 from ghostcompanion.core.entity.portfolio import Portfolio
 from ghostcompanion.core.entity.symbol_change import SymbolChange
@@ -19,7 +20,8 @@ class ImportCryptoTransactions:
     """Builds the portfolios of Coinbase and of the configured self-custody wallets.
 
     They're built together because coins move between them: both sides of a
-    transfer come from one transaction, seen once by each account.
+    transfer come from one transaction, seen once by each account. What an EVM
+    wallet lends or borrows stays in its own account, naming the market.
     """
 
     def __init__(
@@ -39,6 +41,7 @@ class ImportCryptoTransactions:
     def execute(self) -> list[Portfolio]:
         portfolios: dict[str, Portfolio] = {}
         movements: list[OnChainMovement] = []
+        balances: list[LendingBalance] = []
 
         if self.coinbase_provider:
             logger.info("Started getting all Coinbase transactions")
@@ -63,6 +66,9 @@ class ImportCryptoTransactions:
                         f"`{wallet.name}` is an EVM wallet, which needs ALCHEMY_API_KEY"
                     )
                 movements += self.evm_wallet_provider.get_movements(wallet, tokens)
+                balances += self.evm_wallet_provider.get_lending_balances(
+                    wallet, tokens
+                )
                 tracked_symbols[wallet.name] = {
                     x.symbol for x in tokens if x.network in wallet.networks
                 }
@@ -72,7 +78,9 @@ class ImportCryptoTransactions:
                     x.native_symbol for x in wallet.networks
                 }
 
-        CryptoLedger(portfolios, wallets, tracked_symbols).book(movements)
+        ledger = CryptoLedger(portfolios, wallets, tracked_symbols)
+        ledger.book(movements)
+        ledger.reconcile(balances)
 
         symbol_mappings = self.config_repository.get_symbol_mappings()
         for portfolio in portfolios.values():

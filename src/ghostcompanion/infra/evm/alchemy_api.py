@@ -10,7 +10,7 @@ from ghostcompanion.core.ports.evm_chain import EvmChainPort
 _SUBDOMAINS = {Network.ETHEREUM: "eth-mainnet", Network.BASE: "base-mainnet"}
 _CATEGORIES = ["external", "internal", "erc20"]
 _PAGE_SIZE = "0x3e8"
-_RECEIPTS_PER_BATCH = 50
+_CALLS_PER_BATCH = 50
 _MAX_ATTEMPTS = 6
 _TIMEOUT = 60
 
@@ -56,8 +56,8 @@ class AlchemyApi(EvmChainPort):
         self, network: Network, transaction_hashes: list[str]
     ) -> list[dict[str, Any]]:
         receipts = []
-        for start in range(0, len(transaction_hashes), _RECEIPTS_PER_BATCH):
-            batch = transaction_hashes[start : start + _RECEIPTS_PER_BATCH]
+        for start in range(0, len(transaction_hashes), _CALLS_PER_BATCH):
+            batch = transaction_hashes[start : start + _CALLS_PER_BATCH]
             receipts += self._call(
                 network,
                 [
@@ -66,6 +66,23 @@ class AlchemyApi(EvmChainPort):
                 ],
             )
         return receipts
+
+    def call_contracts(
+        self, network: Network, calls: list[tuple[str, str]]
+    ) -> list[str]:
+        """Reads contracts at the latest block, one `eth_call` per contract and
+        call data, answering each with its raw return data."""
+        results = []
+        for start in range(0, len(calls), _CALLS_PER_BATCH):
+            batch = calls[start : start + _CALLS_PER_BATCH]
+            results += self._call(
+                network,
+                [
+                    ("eth_call", [{"to": contract, "data": data}, "latest"])
+                    for contract, data in batch
+                ],
+            )
+        return results
 
     def _call(self, network: Network, calls: list[tuple[str, list[Any]]]) -> list[Any]:
         payload = [

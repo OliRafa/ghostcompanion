@@ -2,11 +2,21 @@ import datetime
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
+from ghostcompanion.core.entity.wallet import Network
+
 
 class MarketPricePort(ABC):
     @abstractmethod
     def get_crypto_price(
-        self, symbol: str, currency: str, day: datetime.date
+        self,
+        symbol: str,
+        currency: str,
+        moment: datetime.datetime,
+        network: Network,
+        contract: str | None = None,
     ) -> Decimal:
-        """Returns the coin's daily close on `day`, or on the closest day before."""
+        """Returns the coin's price at `moment`. The coin is the one at `contract`
+        on `network`, or the network's own coin without one; `symbol` names it
+        on Yahoo, whose daily close on that day (or the closest day before) is
+        used when there's no price for the moment itself."""
         ...

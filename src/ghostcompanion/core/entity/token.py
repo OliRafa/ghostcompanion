@@ -34,8 +34,9 @@ class Token(BaseModel):
     contract: str | None = None
     symbol: str
     data_source: str = "YAHOO"
-    # Yahoo coin pricing moves that aren't swaps; without one, the token is only
-    # booked when a swap tells what it cost.
+    # Yahoo coin pricing moves that aren't swaps, when DefiLlama has no price for
+    # the token at that moment; without one, the token is only booked when a
+    # swap tells what it cost.
     price_symbol: str | None = None
 
     @field_validator("contract")

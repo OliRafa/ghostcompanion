@@ -20,7 +20,8 @@ wallets:
 
 # Tokens EVM wallets track besides USDC and ETH. A well-known one needs no
 # contract; any other gives its network and contract (never its name: scams copy
-# names). `price` is the Yahoo coin pricing moves that aren't swaps.
+# names). `price` is the Yahoo coin pricing moves that aren't swaps when DefiLlama
+# has no price for the token at that moment.
 tokens:
   cbBTC:
     symbol: CBBTC

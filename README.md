@@ -131,7 +131,7 @@ tokens:
     data_source: GHOSTFOLIO
 ```
 
-Wallet names must be unique and can't reuse a broker account name
+Wallet names must be unique and can't reuse an account name the importers create
 (`Coinbase`, `Interactive Brokers`, `Tastytrade`), and an address can belong to a
 single wallet. A wallet is either on `bitcoin` or on EVM networks (`ethereum`,
 `base`). See [Self-Custody Wallets](#self-custody-wallets).
@@ -277,11 +277,13 @@ account with the wallet's name, filled from its confirmed on-chain transactions
 * **Every move is priced at market**, the way Coinbase itself accounts for coins
   moving in and out: coins leaving an account are sold, coins arriving are
   bought. For Coinbase sends and receives that's Coinbase's own value of the
-  transaction; for wallets, that day's closing price (Yahoo Finance, in USD).
+  transaction; for wallets, the coin's price at the moment of the transaction
+  ([DefiLlama](https://defillama.com), in USD), or that day's closing price on
+  Yahoo Finance when DefiLlama has none, with a warning in the log.
 * **Transfers between your own accounts** (e.g. Coinbase withdrawals to the
   wallet, or the other way around) are recognized by their transaction id. The
-  source sells the coins and the destination buys them at the same price, on the
-  day they were sent, so the destination's cost is the coins' value when they
+  source sells the coins and the destination buys them at the same price, from
+  when they were sent, so the destination's cost is the coins' value when they
   arrived. Coinbase withdrawals to a wallet show up once the transaction
   confirms.
 * **Network fees** paid by the wallet are sold for nothing, as Coinbase's are.
@@ -322,20 +324,53 @@ EVM wallets are read through [Alchemy](https://www.alchemy.com)
   any other needs its `network` and `contract`.
 * **Each token says how Ghostfolio knows it:** its `symbol`, its `data_source`
   (`YAHOO` by default, which names coins as `<SYMBOL>USD` pairs) and, for moves
-  that aren't swaps, the Yahoo coin pricing them (`price`; e.g. `BTC` for
-  cbBTC). A token without a `price` is only booked when a swap tells what it
-  cost.
+  that aren't swaps, the Yahoo coin pricing them when DefiLlama has no price for
+  the token itself at that moment (`price`; e.g. `BTC` for cbBTC). A token
+  without a `price` is only booked when a swap tells what it cost.
 * **Swaps** (one coin given for another in a single transaction) sell the coin
   given and buy the one got at the price the swap actually got. That also prices
   coins with no market quote of their own, such as vault shares.
 * **Network fees** are sold for nothing in ETH, including Base's L1 data fee, for
   every transaction the wallet signed; a failed one only costs its fee.
-* **DeFi positions aren't modelled yet:** coins lent to or borrowed from a
-  protocol (e.g. Aave) count as sent and received.
+* **Aave** (v3's core market, on every network the wallet lists): what the
+  wallet supplies or owes stays in the wallet's own account, as it does on the
+  chain, and every activity Aave is behind names it:
+  * Supplying and withdrawing book nothing: the coin is still the wallet's.
+  * Borrowing buys the coin and sells a `DEBT-<SYMBOL>` holding (e.g.
+    `DEBT-USDC`), both "Borrowed from Aave", so the debt shows as a negative
+    holding valued at the coin's price. Repaying sells the coin and buys the
+    debt back ("Repaid to Aave"). Aave rounds a new debt up by a unit of the
+    coin: that unit is sold for nothing on its own ("Rounded up by Aave"), so a
+    debt repaid in full ends at exactly zero.
+  * A debt is bought back for nothing, with what repaid it as a fee. Ghostfolio
+    measures a sale against the average of the buys since the holding was last
+    at zero, so buying a debt back at its price would turn every later borrow
+    into a loss of that price. Net performance then counts debts right, overall
+    and per holding, but Ghostfolio's fees and gross performance include what
+    was repaid.
+  * What's done without the wallet's own coins, such as a collateral swap or
+    repaying with collateral through a relayer (CoW Protocol, Aave's adapters),
+    is read from Aave's own events whoever signed it, and booked as a swap "on
+    Aave": one supplied coin for another, or collateral for debt.
+  * Interest moves no coin. Aave adds it to a position every time it touches
+    it, so it's booked then, a second before that move so Ghostfolio always
+    counts it first: interest earned is bought for nothing ("Interest earned on
+    Aave") and interest due is sold for nothing ("Interest due to Aave"). Every
+    import also compares what Aave holds for the wallet with what was booked
+    there, and books the interest accrued since Aave's last move, dated the day
+    of the import.
+  * A gap interest can't explain (a position that shrank, or grew more than
+    25% a year since its last move) means a move went unread. It's still
+    booked, so holdings match Aave, but as a "Balance correction on Aave", with
+    a warning in the log.
+  * Other protocols aren't modelled yet: coins lent to or borrowed from them
+    count as sent and received.
 
 Tokens with a data source other than `YAHOO` need Ghostfolio to price them, e.g.
 through a price proxy behind its `GHOSTFOLIO` data source (`PROXY_ROUTES` and
-`API_KEY_GHOSTFOLIO` admin settings), with the same symbols.
+`API_KEY_GHOSTFOLIO` admin settings), with the same symbols. Debts are always
+booked under `GHOSTFOLIO`, so borrowing needs one too, serving `DEBT-<SYMBOL>`
+at the price of the coin owed (e.g. `DEBT-USDC` from Yahoo's `USDC-USD`).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -464,6 +499,7 @@ for the API Python wrapper.
 for the API Python wrapper.
 * [mempool.space](https://mempool.space) for the blockchain API.
 * [Alchemy](https://www.alchemy.com) for the EVM chain data API.
+* [DefiLlama](https://defillama.com) for the coin prices API.
 * [Yahoo Finance](https://finance.yahoo.com) for the API and
 [ranaroussi/yfinance](https://github.com/ranaroussi/yfinance)
 for the API Python wrapper.

@@ -9,6 +9,7 @@ from ghostcompanion.core.entity.wallet import Network, Wallet
 from ghostcompanion.core.provider.blockchain import BlockchainProvider
 from ghostcompanion.infra.market_prices.market_price_adapter import MarketPriceAdapter
 from tests.infra.blockchain_api import InMemoryBlockchainApi
+from tests.infra.defillama_api import InMemoryDefiLlamaApi
 from tests.infra.yahoo_finance_api import InMemoryYahooFinanceApi
 from tests.resources.blockchain.transactions import (
     COINBASE_WITHDRAWAL_TXID,
@@ -69,6 +70,18 @@ class TestGetMovements(BlockchainProviderFactory):
         assert self.movement(COINBASE_WITHDRAWAL_TXID).market_unit_price == Decimal(
             "61000"
         )
+        assert self.movement(EXTERNAL_SEND_TXID).market_unit_price == Decimal("67000")
+
+    def should_price_movements_at_the_moment_of_their_block(self):
+        self.provider = BlockchainProvider(
+            InMemoryBlockchainApi(),
+            MarketPriceAdapter(InMemoryYahooFinanceApi(), InMemoryDefiLlamaApi()),
+        )
+
+        assert self.movement(COINBASE_WITHDRAWAL_TXID).market_unit_price == Decimal(
+            "61534.12"
+        )
+        # No DefiLlama point within the hour: the day's close.
         assert self.movement(EXTERNAL_SEND_TXID).market_unit_price == Decimal("67000")
 
 

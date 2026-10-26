@@ -71,7 +71,7 @@ class BlockchainProvider:
             executed_at=executed_at,
             fee=self._to_coins(fee),
             market_unit_price=self.market_prices.get_crypto_price(
-                Network.BITCOIN.native_symbol, _CURRENCY, executed_at.date()
+                Network.BITCOIN.native_symbol, _CURRENCY, executed_at, Network.BITCOIN
             ),
             quantity=self._to_coins(received - spent + fee),
             symbol=Network.BITCOIN.native_symbol,

@@ -1,10 +1,11 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from pytest import fixture
 
 from ghostcompanion.core.entity.account import GhostfolioAccount
+from ghostcompanion.core.entity.lending import LendingBalance
 from ghostcompanion.core.entity.onchain_movement import OnChainMovement
 from ghostcompanion.core.entity.portfolio import Portfolio
 from ghostcompanion.core.entity.trade import Trade
@@ -439,3 +440,624 @@ class TestPerCoinPairing(CryptoLedgerFactory):
         assert [
             x.description for x in self.portfolios["Cold Storage"].get_trades("USDC")
         ] == ["Transfer from Coinbase"]
+
+
+def build_market_movement(
+    quantity: str, executed_at: datetime, **fields
+) -> OnChainMovement:
+    return build_movement("DeFi Wallet", quantity, executed_at, market="Aave", **fields)
+
+
+class LendingFactory:
+    @fixture(autouse=True)
+    def initialize_ledger(self):
+        self.portfolios = {
+            "DeFi Wallet": Portfolio(GhostfolioAccount(name="DeFi Wallet"))
+        }
+        self.ledger = CryptoLedger(self.portfolios, [])
+
+    def booked(self, symbol: str) -> list[tuple]:
+        portfolio = self.portfolios["DeFi Wallet"]
+        if not portfolio.has_asset(symbol):
+            return []
+        return [
+            (x.transaction_type, x.quantity, x.unit_price, x.description)
+            for x in portfolio.get_trades(symbol)
+        ]
+
+    def fees(self, symbol: str) -> list[Decimal]:
+        return [x.fee for x in self.portfolios["DeFi Wallet"].get_trades(symbol)]
+
+    def balance(self, symbol: str, quantity: str) -> LendingBalance:
+        return LendingBalance(
+            account="DeFi Wallet",
+            currency="USD",
+            data_source="YAHOO",
+            market="Aave",
+            observed_at=at(19, 10, 2026),
+            quantity=Decimal(quantity),
+            symbol=symbol,
+        )
+
+
+class TestLendingMoves(LendingFactory):
+    def when_supplying_should_keep_the_coin_in_the_account(self):
+        self.ledger.book(
+            [
+                build_movement("DeFi Wallet", "-0.004", at(7, 4, 2026), symbol="CBBTC"),
+                build_market_movement("0.004", at(7, 4, 2026), symbol="CBBTC"),
+            ]
+        )
+
+        assert self.booked("CBBTC") == []
+
+    def when_supplying_and_borrowing_at_once_should_not_be_a_swap(self):
+        self.ledger.book(
+            [
+                build_movement("DeFi Wallet", "-0.004", at(7, 4, 2026), symbol="CBBTC"),
+                build_market_movement("0.004", at(7, 4, 2026), symbol="CBBTC"),
+                build_movement(
+                    "DeFi Wallet",
+                    "150",
+                    at(7, 4, 2026),
+                    symbol="USDC",
+                    market_unit_price="1",
+                    description="Borrowed from Aave",
+                ),
+                build_market_movement(
+                    "-150",
+                    at(7, 4, 2026),
+                    symbol="DEBT-USDC",
+                    market_unit_price="1",
+                    description="Borrowed from Aave",
+                    debt=True,
+                ),
+            ]
+        )
+
+        assert self.booked("CBBTC") == []
+        assert self.booked("USDC") == [
+            (TransactionType.BUY, Decimal("150"), Decimal("1"), "Borrowed from Aave")
+        ]
+        assert self.booked("DEBT-USDC") == [
+            (TransactionType.SELL, Decimal("150"), Decimal("1"), "Borrowed from Aave")
+        ]
+
+    def when_swapping_collateral_should_swap_it_on_the_market(self):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "-850.42315", at(16, 9, 2026), symbol="USDC", market_unit_price="1"
+                ),
+                build_market_movement("0.01042117", at(16, 9, 2026), symbol="CBBTC"),
+            ]
+        )
+
+        assert self.booked("USDC") == [
+            (
+                TransactionType.SELL,
+                Decimal("850.42315"),
+                Decimal("1"),
+                "Swapped for CBBTC on Aave",
+            )
+        ]
+        assert self.booked("CBBTC") == [
+            (
+                TransactionType.BUY,
+                Decimal("0.01042117"),
+                Decimal("850.42315") / Decimal("0.01042117"),
+                "Swapped from USDC on Aave",
+            )
+        ]
+
+    def when_market_sells_collateral_to_repay_should_swap_only_what_it_kept(self):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "-0.01093725",
+                    at(5, 10, 2026),
+                    symbol="CBBTC",
+                    market_unit_price="86400",
+                ),
+                build_market_movement(
+                    "935.6",
+                    at(5, 10, 2026),
+                    symbol="DEBT-USDC",
+                    market_unit_price="1",
+                    description="Repaid to Aave",
+                    debt=True,
+                ),
+                build_movement(
+                    "DeFi Wallet",
+                    "0.00009318",
+                    at(5, 10, 2026),
+                    symbol="CBBTC",
+                    market_unit_price="86400",
+                ),
+            ]
+        )
+
+        assert self.booked("CBBTC") == [
+            (
+                TransactionType.SELL,
+                Decimal("0.01084407"),
+                Decimal("86400"),
+                "Swapped for DEBT-USDC on Aave",
+            )
+        ]
+        # 0.01084407 CBBTC at 86400 repaid 935.6 of the debt.
+        assert self.booked("DEBT-USDC") == [
+            (
+                TransactionType.BUY,
+                Decimal("935.6"),
+                Decimal("0"),
+                "Swapped from CBBTC on Aave",
+            )
+        ]
+        assert self.fees("DEBT-USDC") == [Decimal("936.927648")]
+
+    def when_market_swaps_debts_should_keep_what_the_wallet_got_apart(self):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "-36.218774",
+                    at(12, 5, 2026),
+                    symbol="DEBT-USDC",
+                    market_unit_price="1",
+                    description="Borrowed from Aave",
+                    debt=True,
+                ),
+                build_market_movement(
+                    "0.00045",
+                    at(12, 5, 2026),
+                    symbol="DEBT-CBBTC",
+                    market_unit_price="80500",
+                    description="Repaid to Aave",
+                    debt=True,
+                ),
+                build_movement(
+                    "DeFi Wallet",
+                    "0.118352",
+                    at(12, 5, 2026),
+                    symbol="USDC",
+                    market_unit_price="1",
+                ),
+            ]
+        )
+
+        assert [x[3] for x in self.booked("DEBT-USDC")] == [
+            "Swapped for DEBT-CBBTC on Aave"
+        ]
+        assert [x[3] for x in self.booked("DEBT-CBBTC")] == [
+            "Swapped from DEBT-USDC on Aave"
+        ]
+        assert self.booked("USDC") == [
+            (TransactionType.BUY, Decimal("0.118352"), Decimal("1"), "Received")
+        ]
+
+
+class TestRepayments(LendingFactory):
+    def when_borrowing_should_sell_the_debt_at_its_price(self):
+        self.ledger.book(
+            [
+                build_movement(
+                    "DeFi Wallet",
+                    "150",
+                    at(7, 4, 2026),
+                    symbol="USDC",
+                    market_unit_price="0.9998",
+                    description="Borrowed from Aave",
+                ),
+                build_market_movement(
+                    "-150",
+                    at(7, 4, 2026),
+                    symbol="DEBT-USDC",
+                    market_unit_price="0.9998",
+                    description="Borrowed from Aave",
+                    debt=True,
+                ),
+            ]
+        )
+
+        assert self.booked("DEBT-USDC") == [
+            (
+                TransactionType.SELL,
+                Decimal("150"),
+                Decimal("0.9998"),
+                "Borrowed from Aave",
+            )
+        ]
+        assert self.fees("DEBT-USDC") == [Decimal("0")]
+
+    def when_repaying_should_buy_the_debt_back_for_nothing_with_its_worth_as_fee(
+        self,
+    ):
+        self.ledger.book(
+            [
+                build_movement(
+                    "DeFi Wallet",
+                    "-50",
+                    at(8, 4, 2026),
+                    symbol="USDC",
+                    market_unit_price="1.0002",
+                    description="Repaid to Aave",
+                ),
+                build_market_movement(
+                    "50",
+                    at(8, 4, 2026),
+                    symbol="DEBT-USDC",
+                    market_unit_price="1.0002",
+                    description="Repaid to Aave",
+                    debt=True,
+                ),
+            ]
+        )
+
+        assert self.booked("USDC") == [
+            (TransactionType.SELL, Decimal("50"), Decimal("1.0002"), "Repaid to Aave")
+        ]
+        assert self.booked("DEBT-USDC") == [
+            (TransactionType.BUY, Decimal("50"), Decimal("0"), "Repaid to Aave")
+        ]
+        assert self.fees("DEBT-USDC") == [Decimal("50.01")]
+
+    def when_swapping_debts_should_buy_the_repaid_one_back_for_nothing(self):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "-36.218774",
+                    at(12, 5, 2026),
+                    symbol="DEBT-USDC",
+                    market_unit_price="1",
+                    debt=True,
+                ),
+                build_market_movement(
+                    "0.00045",
+                    at(12, 5, 2026),
+                    symbol="DEBT-CBBTC",
+                    market_unit_price="80500",
+                    debt=True,
+                ),
+            ]
+        )
+
+        assert self.booked("DEBT-USDC") == [
+            (
+                TransactionType.SELL,
+                Decimal("36.218774"),
+                Decimal("1"),
+                "Swapped for DEBT-CBBTC on Aave",
+            )
+        ]
+        assert self.booked("DEBT-CBBTC") == [
+            (
+                TransactionType.BUY,
+                Decimal("0.00045"),
+                Decimal("0"),
+                "Swapped from DEBT-USDC on Aave",
+            )
+        ]
+        assert self.fees("DEBT-CBBTC") == [Decimal("36.218774")]
+
+    def when_buying_a_coin_the_market_holds_should_charge_no_fee(self):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "-850.42315", at(16, 9, 2026), symbol="USDC", market_unit_price="1"
+                ),
+                build_market_movement("0.01042117", at(16, 9, 2026), symbol="CBBTC"),
+            ]
+        )
+
+        assert self.fees("CBBTC") == [Decimal("0")]
+
+
+class ReconcileFactory(LendingFactory):
+    def supply(self, quantity: str):
+        self.ledger.book(
+            [
+                build_movement(
+                    "DeFi Wallet", f"-{quantity}", at(7, 4, 2026), symbol="CBBTC"
+                ),
+                build_market_movement(quantity, at(7, 4, 2026), symbol="CBBTC"),
+            ]
+        )
+
+    def borrow(self, quantity: str):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    f"-{quantity}",
+                    at(7, 4, 2026),
+                    transaction_id="cd" * 32,
+                    symbol="DEBT-USDC",
+                    market_unit_price="1",
+                    description="Borrowed from Aave",
+                    debt=True,
+                )
+            ]
+        )
+
+    def interest(self, symbol: str) -> list[tuple]:
+        return [x for x in self.booked(symbol) if x[3].startswith("Interest")]
+
+    def corrections(self, symbol: str) -> list[tuple]:
+        return [x for x in self.booked(symbol) if x[3] == "Balance correction on Aave"]
+
+
+class TestInterest(ReconcileFactory):
+    def should_book_interest_when_the_market_added_it(self):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "0.613407",
+                    at(16, 9, 2026),
+                    symbol="USDC",
+                    market_unit_price="1",
+                    interest=True,
+                ),
+                build_market_movement(
+                    "-5.214877",
+                    at(13, 10, 2026),
+                    transaction_id="cd" * 32,
+                    symbol="DEBT-USDC",
+                    market_unit_price="1",
+                    interest=True,
+                ),
+            ]
+        )
+
+        assert self.interest("USDC") == [
+            (
+                TransactionType.BUY,
+                Decimal("0.613407"),
+                Decimal("0"),
+                "Interest earned on Aave",
+            )
+        ]
+        assert self.interest("DEBT-USDC") == [
+            (
+                TransactionType.SELL,
+                Decimal("5.214877"),
+                Decimal("0"),
+                "Interest due to Aave",
+            )
+        ]
+
+    def should_date_interest_a_second_before_the_move_it_came_with(self):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "-0.127418",
+                    at(18, 6, 2026),
+                    symbol="DEBT-USDC",
+                    market_unit_price="1",
+                    interest=True,
+                    debt=True,
+                ),
+                build_market_movement(
+                    "36.346192",
+                    at(18, 6, 2026),
+                    symbol="DEBT-USDC",
+                    market_unit_price="1",
+                    description="Repaid to Aave",
+                    debt=True,
+                ),
+            ]
+        )
+
+        times = {
+            x.description: x.executed_at
+            for x in self.portfolios["DeFi Wallet"].get_trades("DEBT-USDC")
+        }
+        assert times == {
+            "Interest due to Aave": at(18, 6, 2026) - timedelta(seconds=1),
+            "Repaid to Aave": at(18, 6, 2026),
+        }
+
+    def should_keep_interest_apart_from_the_swap_it_came_with(self):
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "-850.42315", at(16, 9, 2026), symbol="USDC", market_unit_price="1"
+                ),
+                build_market_movement(
+                    "0.613407",
+                    at(16, 9, 2026),
+                    symbol="USDC",
+                    market_unit_price="1",
+                    interest=True,
+                ),
+                build_market_movement("0.01042117", at(16, 9, 2026), symbol="CBBTC"),
+            ]
+        )
+
+        assert [x[3] for x in self.booked("USDC")] == [
+            "Interest earned on Aave",
+            "Swapped for CBBTC on Aave",
+        ]
+
+    def should_buy_interest_earned_for_nothing(self):
+        self.supply("0.004")
+
+        self.ledger.reconcile([self.balance("CBBTC", "0.0041")])
+
+        assert self.interest("CBBTC") == [
+            (
+                TransactionType.BUY,
+                Decimal("0.0001"),
+                Decimal("0"),
+                "Interest earned on Aave",
+            )
+        ]
+
+    def should_sell_interest_due_for_nothing_so_the_debt_grows(self):
+        self.borrow("150")
+
+        self.ledger.reconcile([self.balance("DEBT-USDC", "-150.25")])
+
+        assert self.interest("DEBT-USDC") == [
+            (
+                TransactionType.SELL,
+                Decimal("0.25"),
+                Decimal("0"),
+                "Interest due to Aave",
+            )
+        ]
+
+    def when_nothing_accrued_should_book_nothing(self):
+        self.supply("0.004")
+
+        self.ledger.reconcile(
+            [self.balance("CBBTC", "0.004"), self.balance("DEBT-CBBTC", "0")]
+        )
+
+        assert self.booked("CBBTC") == []
+        assert not self.portfolios["DeFi Wallet"].has_asset("DEBT-CBBTC")
+
+    def when_withdrawn_with_interest_should_catch_up_nothing(self):
+        self.supply("0.004")
+        self.ledger.book(
+            [
+                build_market_movement(
+                    "0.0002",
+                    at(9, 4, 2026),
+                    transaction_id="ef" * 32,
+                    symbol="CBBTC",
+                    interest=True,
+                ),
+                build_market_movement(
+                    "-0.0042", at(9, 4, 2026), transaction_id="ef" * 32, symbol="CBBTC"
+                ),
+                build_movement(
+                    "DeFi Wallet",
+                    "0.0042",
+                    at(9, 4, 2026),
+                    transaction_id="ef" * 32,
+                    symbol="CBBTC",
+                ),
+            ]
+        )
+
+        self.ledger.reconcile([self.balance("CBBTC", "0")])
+
+        [(_, quantity, _, _)] = self.interest("CBBTC")
+        assert quantity == Decimal("0.0002")
+        assert self.corrections("CBBTC") == []
+
+    def should_add_up_the_balances_of_every_network(self):
+        self.supply("0.004")
+
+        self.ledger.reconcile(
+            [self.balance("CBBTC", "0.003"), self.balance("CBBTC", "0.0015")]
+        )
+
+        [(_, quantity, _, _)] = self.interest("CBBTC")
+        assert quantity == Decimal("0.0005")
+
+    def should_compare_the_market_only_with_its_own_share_of_the_coin(self):
+        self.ledger.book(
+            [build_movement("DeFi Wallet", "0.002", at(1, 4, 2026), symbol="CBBTC")]
+        )
+        self.supply("0.004")
+
+        self.ledger.reconcile([self.balance("CBBTC", "0.0041")])
+
+        [(_, quantity, _, description)] = self.interest("CBBTC")
+        assert (quantity, description) == (Decimal("0.0001"), "Interest earned on Aave")
+
+    def should_time_interest_from_the_markets_last_move_not_the_wallets(self):
+        self.supply("0.004")
+        self.ledger.book(
+            [
+                build_movement(
+                    "DeFi Wallet",
+                    "0.001",
+                    at(18, 10, 2026),
+                    transaction_id="ef" * 32,
+                    symbol="CBBTC",
+                )
+            ]
+        )
+
+        self.ledger.reconcile([self.balance("CBBTC", "0.0041")])
+
+        assert self.corrections("CBBTC") == []
+        assert len(self.interest("CBBTC")) == 1
+
+
+class TestBalanceCorrection(ReconcileFactory):
+    def when_coin_supplied_shrank_should_correct_the_balance(self, caplog):
+        self.supply("0.004")
+
+        with caplog.at_level(logging.WARNING):
+            self.ledger.reconcile([self.balance("CBBTC", "0.003")])
+
+        assert self.corrections("CBBTC") == [
+            (
+                TransactionType.SELL,
+                Decimal("0.001"),
+                Decimal("0"),
+                "Balance correction on Aave",
+            )
+        ]
+        assert self.interest("CBBTC") == []
+        assert "`DeFi Wallet` holds 0.003 CBBTC in Aave" in caplog.text
+        assert "may have gone unread" in caplog.text
+
+    def when_debt_shrank_should_correct_the_balance(self):
+        self.borrow("150")
+
+        self.ledger.reconcile([self.balance("DEBT-USDC", "-100")])
+
+        assert self.corrections("DEBT-USDC") == [
+            (
+                TransactionType.BUY,
+                Decimal("50"),
+                Decimal("0"),
+                "Balance correction on Aave",
+            )
+        ]
+
+    def when_more_than_interest_could_explain_should_correct_the_balance(self):
+        # 0.002 on 0.004 in six months is far more than any market pays.
+        self.supply("0.004")
+
+        self.ledger.reconcile([self.balance("CBBTC", "0.006")])
+
+        assert self.corrections("CBBTC") == [
+            (
+                TransactionType.BUY,
+                Decimal("0.002"),
+                Decimal("0"),
+                "Balance correction on Aave",
+            )
+        ]
+
+    def when_position_was_never_moved_should_correct_the_balance(self):
+        self.ledger.reconcile([self.balance("CBBTC", "0.5")])
+
+        assert self.corrections("CBBTC") == [
+            (
+                TransactionType.BUY,
+                Decimal("0.5"),
+                Decimal("0"),
+                "Balance correction on Aave",
+            )
+        ]
+
+    def when_rounding_leaves_dust_should_correct_it_without_warning(self, caplog):
+        self.supply("0.004")
+
+        with caplog.at_level(logging.WARNING):
+            self.ledger.reconcile([self.balance("CBBTC", "0.00399999")])
+
+        assert self.corrections("CBBTC") == [
+            (
+                TransactionType.SELL,
+                Decimal("0.00000001"),
+                Decimal("0"),
+                "Balance correction on Aave",
+            )
+        ]
+        assert caplog.text == ""
