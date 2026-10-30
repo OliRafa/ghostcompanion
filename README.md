@@ -12,7 +12,7 @@
 
 Transfer transactions from numerous sources to [Ghostfolio](https://github.com/ghostfolio/ghostfolio).
 
-Currently implemented for [Coinbase](https://coinbase.com),
+Currently implemented for [Binance](https://www.binance.com), [Coinbase](https://coinbase.com),
 [Interactive Brokers (IBKR)](https://www.interactivebrokers.com), [Tastytrade](https://tastytrade.com)
 and self-custody Bitcoin, Ethereum and Base wallets.
 <br />
@@ -37,6 +37,7 @@ and self-custody Bitcoin, Ethereum and Base wallets.
   * [Kubernetes](#kubernetes)
 * [Self-Custody Wallets](#self-custody-wallets)
   * [Ethereum and Base Wallets](#ethereum-and-base-wallets)
+* [Binance Exports and Caveats](#binance-exports-and-caveats)
 * [Interactive Brokers Flex Queries and Caveats](#interactive-brokers-flex-queries-and-caveats)
 * [Roadmap](#roadmap)
 * [Contributing](#contributing)
@@ -60,7 +61,7 @@ totally (see [Interactive Brokers Flex Queries and Caveats](#interactive-brokers
 for the only exception).
 
 It'll start by getting (or creating) accounts for each source
-(`Coinbase`, `Interactive Brokers`, `Tastytrade`, or each
+(`Binance`, `Coinbase`, `Interactive Brokers`, `Tastytrade`, or each
 [self-custody wallet](#self-custody-wallets) by its name) from Ghostfolio,
 and from that it'll start adding trading transactions and/or dividends.
 
@@ -75,6 +76,8 @@ Start by setting up the appropriate environment variables, listed below.
 | Name                       | Type                | Default Value         | Description                                                                                                                                                             |
 | -------------------------- | ------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ALCHEMY_API_KEY`          | `string` (optional) |                       | [Alchemy](https://www.alchemy.com) API key (the free plan is enough), with Ethereum and Base enabled. Needed to read [EVM wallets](#ethereum-and-base-wallets). |
+| `BINANCE_API_KEY`          | `string`            |                       | The _Binance_ API Key, with only "Enable Reading" on. See [Binance Exports and Caveats](#binance-exports-and-caveats). |
+| `BINANCE_SECRET`           | `string`            |                       | The _Binance_ API Secret Key. |
 | `COINBASE_API_KEY_ID`      | `string`            |                       | The _Coinbase_ API Key.                                                                                                                                         |
 | `COINBASE_SECRET`          | `string`            |                       | The _Coinbase_ Secret. It must be generated according to the <a href="https://docs.cdp.coinbase.com/coinbase-app/authentication-authorization/api-key-authentication#creating-api-keys" target="_blank">Coinbase API official documentation</a>.|
 | `GHOSTCOMPANION_CONFIG`    | `string` (optional) | `ghostcompanion.yaml` | Path to the [configuration file](#configuration-file), relative to the working directory (`/app` in the container). |
@@ -129,10 +132,15 @@ tokens:
     network: base
     contract: "0x3764f07752384450576c6d8b027d06ffa29e5ae9"
     data_source: GHOSTFOLIO
+
+# Binance's Transaction Records exports, relative to this file (see "Binance
+# Exports and Caveats").
+binance:
+  history_path: binance
 ```
 
 Wallet names must be unique and can't reuse an account name the importers create
-(`Coinbase`, `Interactive Brokers`, `Tastytrade`), and an address can belong to a
+(`Binance`, `Coinbase`, `Interactive Brokers`, `Tastytrade`), and an address can belong to a
 single wallet. A wallet is either on `bitcoin` or on EVM networks (`ethereum`,
 `base`). See [Self-Custody Wallets](#self-custody-wallets).
 
@@ -374,6 +382,67 @@ at the price of the coin owed (e.g. `DEBT-USDC` from Yahoo's `USDC-USD`).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## Binance Exports and Caveats
+
+Binance is read from two places:
+
+* **Its API** (`BINANCE_API_KEY` and `BINANCE_SECRET`, created under
+  **Account → API Management** with only **Enable Reading** on): balances, every
+  crypto deposit and withdrawal, with the transaction ids that pair them with
+  Coinbase and your wallets, and trades.
+* **Transaction Records exports**, for older trades. Since November 2024
+  Binance's API returns no trades from before September 2022
+  ([CoinTracking](https://cointracking.freshdesk.com/en/support/solutions/articles/29000039887-binance-import-restrictions)
+  documents the cutoff), and a Tax Report API key reaches no further.
+
+To export them, on the Binance website (not the app):
+
+1. Hover the wallet icon in the header and choose **Asset History**.
+2. Hover the download icon at the top right and choose **Export Transaction
+   Records**.
+3. Keep **Data Type** on `Asset History – Transaction History`, **Coin** and
+   **Account** on `All`, set **Time Range** to `Customize` from your first
+   activity to today, and pick **CSV**.
+4. Click **Generate**. Once Binance tells you it's ready, open the same pop-up
+   and **Download** it.
+5. Put the file, untouched, in the folder `binance.history_path` names: opening
+   and saving it in a spreadsheet changes its dates and numbers. If Binance
+   limits how long one export covers, export each period into a file of its
+   own; periods mustn't overlap.
+
+In the container, mount that folder next to the config file (e.g.
+`-v ./binance:/app/binance:ro` with `history_path: binance`).
+
+How Binance is booked, in its own `Binance` account:
+
+* **Trades against fiat** (BRL, EUR…) are buys and sells in that fiat, with a
+  fee in it as the trade's fee.
+* **A coin traded for another**, stablecoins included, is a swap, valued at
+  BTC's or ETH's price at the moment when one of them is a side, or else at the
+  coin given's daily close.
+* **A fee paid in a coin** (BNB, or the coin bought) is that coin sold for
+  nothing, a second after the trade.
+* **Airdrops** are bought for nothing, and **a coin Binance renamed** (NANO to
+  XNO) is booked under its new name throughout.
+* **Deposits and withdrawals** come from the API and are booked like Coinbase's
+  sends and receives, transfers to and from your other accounts included (see
+  [Self-Custody Wallets](#self-custody-wallets)).
+
+Trades made after the exports end come from the API. Finding them means asking
+about every pair a coin could have been traded in, which takes minutes, so it's
+only done when today's balances differ from what the exports and the API's
+deposits and withdrawals since add up to. Whatever still doesn't add up is
+logged as a warning naming the coin and the difference: the importer doesn't
+read Earn, Convert or dust conversions from the API, nor margin, futures, P2P
+or card buys. Export records it doesn't book are warned about the same way.
+
+Fiat left on Binance becomes the account's cash balance only in the account's
+currency (USD unless you change it in Ghostfolio). On a self-hosted Ghostfolio,
+add the fiat you traded in as described in
+[Self-Hosted Ghostfolio Currencies](#self-hosted-ghostfolio-currencies).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Interactive Brokers Flex Queries and Caveats
 
 Current implementation for getting Interactive Brokers transactions
@@ -408,6 +477,13 @@ with new transactions.
 
 ## Roadmap
 
+* [-] Binance
+  * [x] Spot trades (from Transaction Records exports, and the API after them)
+  * [x] Trading fees
+  * [x] Deposits and withdrawals, transfers with your other accounts included
+  * [x] Airdrops and coin renames
+  * [x] Account balance
+  * [ ] Convert, Earn and dust conversions after the exports
 * [-] Coinbase
   * [x] Crypto buys and sells
   * [x] Crypto transaction fees

@@ -6,9 +6,7 @@ from decimal import Decimal
 from pytest import fixture
 
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider
-from ghostcompanion.core.usecase.import_tastytrade_cash_balances import (
-    ImportTastytradeCashBalances,
-)
+from ghostcompanion.core.usecase.import_cash_balance import ImportCashBalance
 from tests.e2e.resources.stubs import InMemoryTastytradeApi
 
 
@@ -23,7 +21,7 @@ class TastytradeCashBalancesE2E:
         provider = TastytradeProvider(
             InMemoryTastytradeApi(cash_balance=Decimal(amount))
         )
-        ImportTastytradeCashBalances(provider, self.ghostfolio).execute()
+        ImportCashBalance(provider, self.ghostfolio).execute(self.ACCOUNT_NAME)
 
     def latest_balance(self) -> Decimal | None:
         account = self.ghostfolio.get_or_create_account(self.ACCOUNT_NAME)

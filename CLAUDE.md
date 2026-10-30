@@ -295,7 +295,7 @@ UseCases should be tested with **Integration Tests** using **InMemory repositori
 - **Implementation Pattern**:
 
   ```python
-  # In tests/integration/core/usecase/test_import_cash_balances.py
+  # In tests/integration/core/usecase/test_import_cash_balance.py
   def test_should_synchronize_cash_balances():
       # Arrange
       tastytrade_api = InMemoryTastytradeCashApi()
@@ -308,10 +308,10 @@ UseCases should be tested with **Integration Tests** using **InMemory repositori
 
       provider = TastytradeCashBalanceProvider(tastytrade_api)
       ghostfolio = GhostfolioAdapter(ghostfolio_api)
-      use_case = ImportTastytradeCashBalances(provider, ghostfolio)
+      use_case = ImportCashBalance(provider, ghostfolio)
 
       # Act
-      result = use_case.execute()
+      result = use_case.execute("Tastytrade")
 
       # Assert
       assert len(ghostfolio_api.get_account_balances("account-123")) == 1

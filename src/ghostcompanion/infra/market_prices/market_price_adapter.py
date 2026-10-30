@@ -43,11 +43,11 @@ class MarketPriceAdapter(MarketPricePort):
         symbol: str,
         currency: str,
         moment: datetime.datetime,
-        network: Network,
+        network: Network | None,
         contract: str | None = None,
     ) -> Decimal:
         ticker = f"{symbol}-{currency}"
-        if self._asks_defillama(currency):
+        if network is not None and self._asks_defillama(currency):
             coin = self._defillama_coin(network, contract)
             try:
                 price = self._price_at(coin, moment)

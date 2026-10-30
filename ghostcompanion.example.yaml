@@ -31,3 +31,9 @@ tokens:
     network: base
     contract: "0x3764f07752384450576c6d8b027d06ffa29e5ae9"
     data_source: GHOSTFOLIO
+
+# Binance's API no longer returns trades from before September 2022: export them
+# from the website (see the README) into this folder, one CSV per period.
+# Relative to this file.
+binance:
+  history_path: binance

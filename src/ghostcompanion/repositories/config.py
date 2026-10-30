@@ -22,7 +22,7 @@ LEGACY_SYMBOL_MAPPING_FILE = "symbol_mapping.yaml"
 
 # Accounts the importers create in Ghostfolio; a wallet sharing one of these names
 # would have its activities mixed with the broker's.
-_RESERVED_ACCOUNT_NAMES = {"coinbase", "interactive brokers", "tastytrade"}
+_RESERVED_ACCOUNT_NAMES = {"binance", "coinbase", "interactive brokers", "tastytrade"}
 
 
 class InvalidConfigException(Exception):
@@ -67,9 +67,18 @@ class _TokenEntry(BaseModel):
         ]
 
 
+class _BinanceEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The folder of Transaction Records exports, which hold the trades the API
+    # no longer returns.
+    history_path: Path | None = None
+
+
 class _ConfigFile(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    binance: _BinanceEntry = _BinanceEntry()
     symbol_mapping: dict[str, str] = {}
     tokens: dict[str, _TokenEntry] = {}
     wallets: list[Wallet] = []
@@ -125,6 +134,14 @@ class ConfigRepository:
 
     def get_wallets(self) -> list[Wallet]:
         return self._config.wallets
+
+    def get_binance_history_path(self) -> Path | None:
+        """Where Binance's exports are, relative to the config file unless the
+        path is absolute."""
+        path = self._config.binance.history_path
+        if path is None:
+            return None
+        return self.config_path.parent.joinpath(path.expanduser())
 
     def get_tokens(self) -> list[Token]:
         """The tokens EVM wallets track: USDC and each network's own coin, plus

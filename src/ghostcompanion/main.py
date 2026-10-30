@@ -3,30 +3,24 @@ from pathlib import Path
 
 from ghostcompanion.configs.logging_config import configure_logging
 from ghostcompanion.configs.settings import Settings
+from ghostcompanion.core.provider.binance import BinanceProvider
 from ghostcompanion.core.provider.blockchain import BlockchainProvider
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from ghostcompanion.core.provider.evm_wallet import EvmWalletProvider
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider
 from ghostcompanion.core.usecase.export_portfolio import ExportPortfolio
-from ghostcompanion.core.usecase.import_coinbase_cash_balances import (
-    ImportCoinbaseCashBalances,
-)
+from ghostcompanion.core.usecase.import_cash_balance import ImportCashBalance
 from ghostcompanion.core.usecase.import_crypto_transactions import (
     ImportCryptoTransactions,
-)
-from ghostcompanion.core.usecase.import_interactive_brokers_cash_balances import (
-    ImportInteractiveBrokersCashBalances,
 )
 from ghostcompanion.core.usecase.import_interactive_brokers_transactions import (
     ImportInteractiveBrokersTransactions,
 )
-from ghostcompanion.core.usecase.import_tastytrade_cash_balances import (
-    ImportTastytradeCashBalances,
-)
 from ghostcompanion.core.usecase.import_tastytrade_transactions import (
     ImportTastytradeTransactions,
 )
+from ghostcompanion.infra.binance.binance_api import BinanceApi
 from ghostcompanion.infra.blockchain.mempool_space_api import MempoolSpaceApi
 from ghostcompanion.infra.coinbase.coinbase_api import CoinbaseApi
 from ghostcompanion.infra.defillama.defillama_api import DefiLlamaApi
@@ -44,9 +38,19 @@ from ghostcompanion.infra.interactive_brokers.interactive_brokers_api import (
 from ghostcompanion.infra.market_prices.market_price_adapter import MarketPriceAdapter
 from ghostcompanion.infra.tastytrade.tastytrade_adapter import TastytradeAdapter
 from ghostcompanion.infra.tastytrade.tastytrade_api import TastytradeApi
+from ghostcompanion.repositories.binance_transaction_records import (
+    BinanceTransactionRecords,
+)
 from ghostcompanion.repositories.config import ConfigRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _should_run_binance_importer() -> bool:
+    if Settings.Binance.API_KEY and Settings.Binance.SECRET:
+        return True
+
+    return False
 
 
 def _should_run_coinbase_importer() -> bool:
@@ -78,11 +82,29 @@ if __name__ == "__main__":
     config_repository = ConfigRepository(Path(Settings.CONFIG_PATH))
     export_portfolio = ExportPortfolio(ghostfolio)
 
+    market_prices = MarketPriceAdapter(YahooFinanceApi(), DefiLlamaApi())
     coinbase_provider = (
         CoinbaseProvider(CoinbaseApi()) if _should_run_coinbase_importer() else None
     )
-    if coinbase_provider or config_repository.get_wallets():
-        market_prices = MarketPriceAdapter(YahooFinanceApi(), DefiLlamaApi())
+    binance_history_path = config_repository.get_binance_history_path()
+    binance_provider = None
+    if _should_run_binance_importer():
+        binance_provider = BinanceProvider(
+            BinanceApi(),
+            market_prices,
+            (
+                BinanceTransactionRecords(binance_history_path).get_records()
+                if binance_history_path
+                else []
+            ),
+        )
+    elif binance_history_path:
+        logger.warning(
+            "`binance.history_path` is set, but Binance is only imported with"
+            " BINANCE_API_KEY and BINANCE_SECRET"
+        )
+
+    if coinbase_provider or binance_provider or config_repository.get_wallets():
         evm_wallet_provider = None
         if Settings.Evm.ALCHEMY_API_KEY:
             alchemy_api = AlchemyApi()
@@ -95,6 +117,7 @@ if __name__ == "__main__":
             config_repository,
             ghostfolio,
             evm_wallet_provider,
+            binance_provider,
         )
 
         for portfolio in import_crypto_transactions.execute():
@@ -103,9 +126,15 @@ if __name__ == "__main__":
     if coinbase_provider:
         # Import cash balances from Coinbase
         logger.info("Starting Coinbase cash balance import")
-        import_coinbase_cash = ImportCoinbaseCashBalances(coinbase_provider, ghostfolio)
-        import_coinbase_cash.execute()
+        import_coinbase_cash = ImportCashBalance(coinbase_provider, ghostfolio)
+        import_coinbase_cash.execute(CoinbaseProvider.ACCOUNT_NAME)
         logger.info("Coinbase cash balance import complete")
+
+    if binance_provider:
+        logger.info("Starting Binance cash balance import")
+        import_binance_cash = ImportCashBalance(binance_provider, ghostfolio)
+        import_binance_cash.execute(BinanceProvider.ACCOUNT_NAME)
+        logger.info("Binance cash balance import complete")
 
     if _should_run_tastytrade_importer():
         tastytrade_api = TastytradeAdapter(TastytradeApi())
@@ -123,10 +152,8 @@ if __name__ == "__main__":
 
         # Import cash balances from Tastytrade
         logger.info("Starting cash balance import")
-        import_cash_balances = ImportTastytradeCashBalances(
-            tastytrade_provider, ghostfolio
-        )
-        import_cash_balances.execute()
+        import_cash_balances = ImportCashBalance(tastytrade_provider, ghostfolio)
+        import_cash_balances.execute("Tastytrade")
         logger.info("Cash balance import complete")
 
     if _should_run_interactive_brokers_importer():
@@ -141,10 +168,8 @@ if __name__ == "__main__":
 
         # Import cash balances from Interactive Brokers
         logger.info("Starting Interactive Brokers cash balance import")
-        import_ibkr_cash = ImportInteractiveBrokersCashBalances(
-            interactive_brokers, ghostfolio
-        )
-        import_ibkr_cash.execute()
+        import_ibkr_cash = ImportCashBalance(interactive_brokers, ghostfolio)
+        import_ibkr_cash.execute("Interactive Brokers")
         logger.info("Interactive Brokers cash balance import complete")
 
     logger.info("Done!")

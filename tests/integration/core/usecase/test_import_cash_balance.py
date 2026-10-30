@@ -1,18 +1,16 @@
-"""Integration tests for ImportTastytradeCashBalances use case."""
+"""Integration tests for ImportCashBalance use case."""
 
 from datetime import date
 from decimal import Decimal
 
 from ghostcompanion.core.provider.tastytrade import TastytradeProvider
-from ghostcompanion.core.usecase.import_tastytrade_cash_balances import (
-    ImportTastytradeCashBalances,
-)
+from ghostcompanion.core.usecase.import_cash_balance import ImportCashBalance
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 from tests.infra.ghostfolio_api import InMemoryGhostfolioApi
 from tests.infra.tastytrade_api import InMemoryTastytradeApi
 
 
-class TestImportTastytradeCashBalances:
+class TestImportCashBalance:
     """Integration tests using InMemory repositories."""
 
     def setup_method(self) -> None:
@@ -36,9 +34,7 @@ class TestImportTastytradeCashBalances:
         # Arrange - Set current cash balance from provider
         self.tastytrade_api.set_current_cash_balance(Decimal("1500.00"))
 
-        use_case = ImportTastytradeCashBalances(
-            self.tastytrade_provider, self.ghostfolio
-        )
+        use_case = ImportCashBalance(self.tastytrade_provider, self.ghostfolio)
 
         # Act
         result = use_case.execute("Tastytrade")
@@ -58,9 +54,7 @@ class TestImportTastytradeCashBalances:
         """Create a new entry when the provider value differs from Ghostfolio."""
         # Arrange - First create an initial balance
         self.tastytrade_api.set_current_cash_balance(Decimal("1000.00"))
-        use_case = ImportTastytradeCashBalances(
-            self.tastytrade_provider, self.ghostfolio
-        )
+        use_case = ImportCashBalance(self.tastytrade_provider, self.ghostfolio)
         use_case.execute("Tastytrade")
 
         # Now change the provider value
@@ -82,9 +76,7 @@ class TestImportTastytradeCashBalances:
         """When provider value matches latest Ghostfolio balance, do nothing."""
         # Arrange - Create initial balance
         self.tastytrade_api.set_current_cash_balance(Decimal("1000.00"))
-        use_case = ImportTastytradeCashBalances(
-            self.tastytrade_provider, self.ghostfolio
-        )
+        use_case = ImportCashBalance(self.tastytrade_provider, self.ghostfolio)
         use_case.execute("Tastytrade")
 
         # Act - Run again with same value
@@ -104,9 +96,7 @@ class TestImportTastytradeCashBalances:
         # Arrange
         self.tastytrade_api.set_current_cash_balance(Decimal("0.00"))
 
-        use_case = ImportTastytradeCashBalances(
-            self.tastytrade_provider, self.ghostfolio
-        )
+        use_case = ImportCashBalance(self.tastytrade_provider, self.ghostfolio)
 
         # Act
         result = use_case.execute("Tastytrade")
@@ -126,9 +116,7 @@ class TestImportTastytradeCashBalances:
         # Arrange
         self.tastytrade_api.set_current_cash_balance(Decimal("-500.00"))
 
-        use_case = ImportTastytradeCashBalances(
-            self.tastytrade_provider, self.ghostfolio
-        )
+        use_case = ImportCashBalance(self.tastytrade_provider, self.ghostfolio)
 
         # Act
         result = use_case.execute("Tastytrade")
@@ -148,9 +136,7 @@ class TestImportTastytradeCashBalances:
         # Arrange
         self.tastytrade_api.set_current_cash_balance(Decimal("1000.00"))
 
-        use_case = ImportTastytradeCashBalances(
-            self.tastytrade_provider, self.ghostfolio
-        )
+        use_case = ImportCashBalance(self.tastytrade_provider, self.ghostfolio)
 
         # Act
         result = use_case.execute("Tastytrade")
@@ -162,9 +148,7 @@ class TestImportTastytradeCashBalances:
         """Test that historical balances are never deleted, only new ones added."""
         # Arrange - Create multiple balance updates over time
         self.tastytrade_api.set_current_cash_balance(Decimal("1000.00"))
-        use_case = ImportTastytradeCashBalances(
-            self.tastytrade_provider, self.ghostfolio
-        )
+        use_case = ImportCashBalance(self.tastytrade_provider, self.ghostfolio)
         use_case.execute("Tastytrade")
 
         self.tastytrade_api.set_current_cash_balance(Decimal("1200.00"))

@@ -5,6 +5,7 @@ from ghostcompanion.core.entity.lending import LendingBalance
 from ghostcompanion.core.entity.onchain_movement import OnChainMovement
 from ghostcompanion.core.entity.portfolio import Portfolio
 from ghostcompanion.core.entity.symbol_change import SymbolChange
+from ghostcompanion.core.provider.binance import BinanceProvider
 from ghostcompanion.core.provider.blockchain import BlockchainProvider
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from ghostcompanion.core.provider.evm_wallet import EvmWalletProvider
@@ -17,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 @final
 class ImportCryptoTransactions:
-    """Builds the portfolios of Coinbase and of the configured self-custody wallets.
+    """Builds the portfolios of Coinbase, Binance and the configured self-custody
+    wallets.
 
     They're built together because coins move between them: both sides of a
     transfer come from one transaction, seen once by each account. What an EVM
@@ -31,12 +33,14 @@ class ImportCryptoTransactions:
         config_repository: ConfigRepository,
         ghostfolio: GhostfolioAdapter,
         evm_wallet_provider: EvmWalletProvider | None = None,
+        binance_provider: BinanceProvider | None = None,
     ) -> None:
         self.blockchain_provider = blockchain_provider
         self.coinbase_provider = coinbase_provider
         self.config_repository = config_repository
         self.ghostfolio = ghostfolio
         self.evm_wallet_provider = evm_wallet_provider
+        self.binance_provider = binance_provider
 
     def execute(self) -> list[Portfolio]:
         portfolios: dict[str, Portfolio] = {}
@@ -51,6 +55,15 @@ class ImportCryptoTransactions:
                 portfolio.add_asset(coin, self.coinbase_provider.get_trades(coin))
                 movements += self.coinbase_provider.get_movements(coin)
 
+            portfolios[account_name] = portfolio
+
+        if self.binance_provider:
+            logger.info("Started getting all Binance transactions")
+            account_name = BinanceProvider.ACCOUNT_NAME
+            portfolio = Portfolio(self.ghostfolio.get_or_create_account(account_name))
+            for trade in self.binance_provider.get_trades():
+                portfolio.add_trades(trade.symbol, [trade])
+            movements += self.binance_provider.get_movements()
             portfolios[account_name] = portfolio
 
         wallets = self.config_repository.get_wallets()

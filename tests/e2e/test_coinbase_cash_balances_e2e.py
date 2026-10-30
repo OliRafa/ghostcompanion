@@ -6,9 +6,7 @@ from decimal import Decimal
 from pytest import fixture
 
 from ghostcompanion.core.provider.coinbase import CoinbaseProvider
-from ghostcompanion.core.usecase.import_coinbase_cash_balances import (
-    ImportCoinbaseCashBalances,
-)
+from ghostcompanion.core.usecase.import_cash_balance import ImportCashBalance
 from tests.e2e.resources.coinbase import InMemoryCoinbaseApi
 
 
@@ -21,7 +19,7 @@ class CoinbaseCashBalancesE2E:
 
     def import_balance(self, amount: str):
         provider = CoinbaseProvider(InMemoryCoinbaseApi(cash_balance=Decimal(amount)))
-        ImportCoinbaseCashBalances(provider, self.ghostfolio).execute()
+        ImportCashBalance(provider, self.ghostfolio).execute(self.ACCOUNT_NAME)
 
     def latest_balance(self) -> Decimal | None:
         account = self.ghostfolio.get_or_create_account(self.ACCOUNT_NAME)

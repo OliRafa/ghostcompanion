@@ -116,6 +116,14 @@ class TestMomentPrice(MarketPriceAdapterFactory):
 
         assert len(self.defillama_api.requests) == 1
 
+    def when_coin_has_no_network_should_return_daily_close(self):
+        price = self.moment_prices.get_crypto_price(
+            "XLM", "USD", at("2021-06-03T10:15:00"), None
+        )
+
+        assert price == Decimal("0.3861")
+        assert self.defillama_api.requests == []
+
     def when_currency_is_not_usd_should_not_ask_defillama(self):
         with raises(PriceNotFoundException, match="BTC-EUR"):
             self.moment_prices.get_crypto_price(

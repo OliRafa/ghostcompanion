@@ -6,9 +6,7 @@ from decimal import Decimal
 from pytest import fixture
 
 from ghostcompanion.core.provider.interactive_brokers import InteractiveBrokersProvider
-from ghostcompanion.core.usecase.import_interactive_brokers_cash_balances import (
-    ImportInteractiveBrokersCashBalances,
-)
+from ghostcompanion.core.usecase.import_cash_balance import ImportCashBalance
 from tests.e2e.resources.interactive_brokers import InMemoryInteractiveBrokersApi
 
 
@@ -22,7 +20,7 @@ class InteractiveBrokersCashBalancesE2E:
     def import_balance(self, amount: str):
         api = InMemoryInteractiveBrokersApi(cash_balance=Decimal(amount))
         provider = InteractiveBrokersProvider(api)
-        ImportInteractiveBrokersCashBalances(provider, self.ghostfolio).execute()
+        ImportCashBalance(provider, self.ghostfolio).execute(self.ACCOUNT_NAME)
 
     def latest_balance(self) -> Decimal | None:
         account = self.ghostfolio.get_or_create_account(self.ACCOUNT_NAME)

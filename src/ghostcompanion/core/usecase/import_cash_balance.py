@@ -1,18 +1,23 @@
 import logging
+from typing import Protocol
 
 from ghostcompanion.core.entity.cash_balance import CashBalance
-from ghostcompanion.core.provider.coinbase import CoinbaseProvider
 from ghostcompanion.infra.ghostfolio.ghostfolio_adapter import GhostfolioAdapter
 
 logger = logging.getLogger(__name__)
 
 
-class ImportCoinbaseCashBalances:
+class CashBalanceProvider(Protocol):
+    def get_current_cash_balance(self, currency: str) -> CashBalance:
+        ...
+
+
+class ImportCashBalance:
     """
-    Use case for importing current cash balance from Coinbase to Ghostfolio.
+    Use case for importing a provider's current cash balance to Ghostfolio.
 
     This use case synchronizes the current cash balance by:
-    1. Getting the current cash balance from the provider (fiat accounts only)
+    1. Getting the current cash balance from the provider
     2. Getting the latest balance from Ghostfolio
     3. Creating a new balance entry if the values differ
     4. Skipping if values are already in sync
@@ -23,18 +28,18 @@ class ImportCoinbaseCashBalances:
 
     def __init__(
         self,
-        coinbase_provider: CoinbaseProvider,
+        provider: CashBalanceProvider,
         ghostfolio: GhostfolioAdapter,
     ):
-        self.coinbase_provider = coinbase_provider
+        self.provider = provider
         self.ghostfolio = ghostfolio
 
-    def execute(self, account_name: str = "Coinbase") -> CashBalance:
+    def execute(self, account_name: str) -> CashBalance:
         """
         Execute the cash balance import and synchronization.
 
         Args:
-            account_name: The name of the Ghostfolio account (default "Coinbase")
+            account_name: The name of the Ghostfolio account
 
         Returns:
             CashBalance: The current cash balance from the provider
@@ -46,9 +51,7 @@ class ImportCoinbaseCashBalances:
         )
 
         # Get current balance from provider
-        current_balance = self.coinbase_provider.get_current_cash_balance(
-            account_currency
-        )
+        current_balance = self.provider.get_current_cash_balance(account_currency)
 
         # Get latest balance from Ghostfolio
         latest_balance = self.ghostfolio.get_latest_account_balance(
@@ -58,7 +61,7 @@ class ImportCoinbaseCashBalances:
         # Compare and update if different
         if self._should_update(current_balance, latest_balance):
             logger.info(
-                f"Updating cash balance: ${current_balance.amount} "
+                f"Updating `{account_name}` cash balance: ${current_balance.amount} "
                 f"(previous: ${latest_balance.amount if latest_balance else 'None'})"
             )
             self.ghostfolio.create_account_balance(
@@ -67,7 +70,7 @@ class ImportCoinbaseCashBalances:
                 current_balance.amount,
             )
         else:
-            logger.info("Cash balance is already up to date")
+            logger.info(f"`{account_name}` cash balance is already up to date")
 
         return current_balance
 

@@ -5,6 +5,11 @@ from dotenv import find_dotenv, load_dotenv
 _ = load_dotenv(find_dotenv())
 
 
+class BinanceSettings:
+    API_KEY: str = getenv("BINANCE_API_KEY", "")
+    SECRET: str = getenv("BINANCE_SECRET", "")
+
+
 class BlockchainSettings:
     MEMPOOL_BASE_URL: str = getenv("MEMPOOL_BASE_URL", "https://mempool.space/api")
 
@@ -36,6 +41,7 @@ class TastytradeSettings:
 class Settings(GhostfolioSettings, TastytradeSettings):
     CONFIG_PATH: str = getenv("GHOSTCOMPANION_CONFIG", "ghostcompanion.yaml")
     LOG_LEVEL: str = getenv("LOG_LEVEL", "INFO")
+    Binance = BinanceSettings
     Blockchain = BlockchainSettings
     Coinbase = CoinbaseSettings
     Evm = EvmSettings

@@ -114,6 +114,15 @@ wallets:
         with raises(InvalidConfigException, match="reserved"):
             repository.get_wallets()
 
+    def when_wallet_name_matches_binance_should_raise_exception(self):
+        repository = self.repository_with(
+            f"wallets:\n  - name: binance\n    network: bitcoin\n"
+            f"    addresses: [{ADDRESS_A}]\n"
+        )
+
+        with raises(InvalidConfigException, match="reserved"):
+            repository.get_wallets()
+
     def when_address_is_in_two_wallets_should_raise_exception(self):
         repository = self.repository_with(
             f"""
@@ -213,6 +222,32 @@ class TestGetTokens(ConfigRepositoryFactory):
 
         with raises(InvalidConfigException, match="EVM"):
             repository.get_tokens()
+
+
+class TestGetBinanceHistoryPath(ConfigRepositoryFactory):
+    def should_resolve_a_relative_path_against_the_config_file(self):
+        repository = self.repository_with("binance:\n  history_path: exports\n")
+
+        assert (
+            repository.get_binance_history_path()
+            == self.config_path.parent.joinpath("exports")
+        )
+
+    def should_keep_an_absolute_path(self):
+        repository = self.repository_with("binance:\n  history_path: /data/binance\n")
+
+        assert repository.get_binance_history_path() == Path("/data/binance")
+
+    def when_not_configured_should_return_none(self):
+        repository = self.repository_with("symbol_mapping:\n  EURN: CMBT\n")
+
+        assert repository.get_binance_history_path() is None
+
+    def when_key_is_unknown_should_raise_exception(self):
+        repository = self.repository_with("binance:\n  history: exports\n")
+
+        with raises(InvalidConfigException):
+            repository.get_binance_history_path()
 
 
 class TestInvalidConfig(ConfigRepositoryFactory):

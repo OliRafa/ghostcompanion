@@ -10,7 +10,7 @@ license = "The Unlicense"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<3.16"
 requests = "^2.31.0"
 python-dotenv = "^1.0.0"
 pyyaml = "^6.0.2"
@@ -19,6 +19,9 @@ yfinance = "^0.2.52"
 pyjwt = "2.8.0"
 cryptography = "42.0.5"
 ibflex = "^1.1"
+binance-sdk-spot = "^13.4.0"
+binance-sdk-wallet = "^13.9.0"
+binance-sdk-fiat = "^6.8.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.11.0"
