@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+# [3.3.0](https://github.com/OliRafa/ghostcompanion/compare/v3.2.0...v3.3.0) (2026-10-30)
+
+
+### Features
+
+* **binance:** import Binance trades, transfers and cash balance ([5324eee](https://github.com/OliRafa/ghostcompanion/commit/5324eee0c96334ae1b2ee28b62898102935b42fd))
+
 # [3.2.0](https://github.com/OliRafa/ghostcompanion/compare/v3.1.0...v3.2.0) (2026-10-26)
 
 
