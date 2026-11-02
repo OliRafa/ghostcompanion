@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
@@ -38,6 +39,15 @@ class TestGetCoins(CoinbaseProviderFactory):
         coins = self.coinbase_provider.get_coins()
 
         assert coins == ["ETH", "BTC"]
+
+    def when_coin_has_a_staked_account_should_return_it_once(self):
+        api = self.coinbase_provider.coinbase_api
+        btc_wallet = next(x for x in api._accounts if x["currency"]["code"] == "BTC")
+        api._accounts = [{**btc_wallet, "name": "Staked BTC"}, *api._accounts]
+
+        coins = self.coinbase_provider.get_coins()
+
+        assert coins == ["BTC", "ETH"]
 
 
 class TestGetTrades(CoinbaseProviderFactory):
@@ -116,11 +126,109 @@ class TestGetTrades(CoinbaseProviderFactory):
         assert trade.quantity == Decimal("3.0905425")
         assert trade.value == Decimal("0.0")
 
+    def should_treat_price_improvement_credits_as_buys_with_zero_cost(self):
+        self.coinbase_provider.coinbase_api._transactions = [
+            {
+                "amount": {"amount": "0.024617", "currency": "EURC"},
+                "created_at": "2025-12-09T14:02:37Z",
+                "native_amount": {"amount": "0.03", "currency": "USD"},
+                "resource": "transaction",
+                "status": "completed",
+                "type": "retail_simple_price_improvement",
+            }
+        ]
+
+        [trade] = self.coinbase_provider.get_trades("EURC")
+
+        assert trade.transaction_type == TransactionType.BUY
+        assert trade.symbol == "EURC"
+        assert trade.quantity == Decimal("0.024617")
+        assert trade.value == Decimal("0")
+        assert trade.fee == Decimal("0")
+
     def should_leave_sends_to_movements(self):
         trades = self.coinbase_provider.get_trades("BTC")
 
         transactions = self.coinbase_provider.coinbase_api.get_transactions("BTC")
         assert len(trades) == sum(1 for x in transactions if x["type"] != "send")
+
+
+def build_fill(
+    amount: str,
+    currency: str,
+    product_id: str = "BTC-EUR",
+    order_side: str = "buy",
+) -> dict:
+    return {
+        "advanced_trade_fill": {
+            "commission": "0.861762",
+            "fill_price": "61327.45",
+            "order_id": "6b1f3e2a-4c5d-4e8f-9a0b-1c2d3e4f5a6b",
+            "order_side": order_side,
+            "product_id": product_id,
+        },
+        "amount": {"amount": amount, "currency": currency},
+        "created_at": "2025-11-04T09:27:51Z",
+        "native_amount": {"amount": "250.18", "currency": "USD"},
+        "resource": "transaction",
+        "status": "completed",
+        "type": "advanced_trade_fill",
+    }
+
+
+class TestGetAdvancedTradeFills(CoinbaseProviderFactory):
+    def trades_for(self, coin: str, *transactions: dict) -> list:
+        self.coinbase_provider.coinbase_api._transactions = list(transactions)
+        return self.coinbase_provider.get_trades(coin)
+
+    def when_pair_is_quoted_in_fiat_should_book_fill_in_that_fiat(self):
+        [trade] = self.trades_for("BTC", build_fill("0.00351274", "BTC"))
+
+        assert trade.transaction_type == TransactionType.BUY
+        assert trade.symbol == "BTC"
+        assert trade.currency == "EUR"
+        assert trade.quantity == Decimal("0.00351274")
+        assert trade.unit_price == Decimal("61327.45")
+        assert trade.value == Decimal("215.4273867130")
+        assert trade.fee == Decimal("0.861762")
+        assert trade.executed_at == datetime(
+            2025, 11, 4, 9, 27, 51, tzinfo=timezone.utc
+        )
+
+    def should_book_sell_fills_as_sells_with_positive_quantity(self):
+        [trade] = self.trades_for(
+            "BTC", build_fill("-0.00351274", "BTC", order_side="sell")
+        )
+
+        assert trade.transaction_type == TransactionType.SELL
+        assert trade.quantity == Decimal("0.00351274")
+        assert trade.value == Decimal("215.4273867130")
+
+    def should_book_each_fill_of_an_order(self):
+        trades = self.trades_for(
+            "BTC", build_fill("0.00351274", "BTC"), build_fill("0.0129", "BTC")
+        )
+
+        assert [x.quantity for x in trades] == [
+            Decimal("0.00351274"),
+            Decimal("0.0129"),
+        ]
+
+    def when_pair_is_quoted_in_crypto_should_skip_fill_and_warn(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            trades = self.trades_for("ETH", build_fill("0.02741", "ETH", "ETH-BTC"))
+
+        assert trades == []
+        assert "ETH-BTC" in caplog.text
+
+    def should_warn_about_a_skipped_fill_only_from_its_base_coin(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            trades = self.trades_for(
+                "BTC", build_fill("-0.001403392", "BTC", "ETH-BTC")
+            )
+
+        assert trades == []
+        assert caplog.text == ""
 
 
 def build_send(

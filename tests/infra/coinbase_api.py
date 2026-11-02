@@ -28,10 +28,4 @@ class InMemoryCoinbaseApi(CoinbasePort):
         return self._accounts
 
     def get_transactions(self, coin: str) -> list[dict[str, Any]]:
-        account = next(filter(lambda x: x["currency"]["code"] == coin, self._accounts))
-        return list(
-            filter(
-                lambda x: x["amount"]["currency"] == account["currency"]["code"],
-                self._transactions,
-            )
-        )
+        return [x for x in self._transactions if x["amount"]["currency"] == coin]

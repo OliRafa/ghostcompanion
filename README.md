@@ -487,6 +487,8 @@ with new transactions.
 * [-] Coinbase
   * [x] Crypto buys and sells
   * [x] Crypto transaction fees
+  * [x] Advanced Trade fills on pairs quoted in fiat, commission included
+  * [ ] Advanced Trade fills on pairs quoted in crypto (logged as a warning)
   * [x] Transfers to and from self-custody wallets
   * [ ] Account balance
 * [-] Self-custody wallets

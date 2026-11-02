@@ -1,7 +1,9 @@
 import secrets
 import time
 from decimal import Decimal
+from functools import cached_property
 from typing import Any
+from urllib.parse import urljoin, urlparse
 
 import jwt
 import requests
@@ -12,8 +14,8 @@ from ghostcompanion.core.ports.coinbase import CoinbasePort
 
 
 class CoinbaseApi(CoinbasePort):
-    def __init__(self) -> None:
-        self.COINBASE_API_URL = "api.coinbase.com"
+    def __init__(self, base_url: str = "https://api.coinbase.com") -> None:
+        self.base_url = base_url
 
     def get_current_cash_balance(self, currency: str) -> Decimal:
         """Get cash balance for specific fiat currency.
@@ -45,18 +47,26 @@ class CoinbaseApi(CoinbasePort):
         resource = "v2/accounts"
         uri = self._generate_uri(resource)
         jwt = self._generate_jwt(uri)
-        self._accounts = self._request_data(resource, jwt)
-        return self._accounts
-
-    def get_transactions(self, coin: str) -> list[dict[str, Any]]:
-        account_id = self._get_account_id(coin)
-        resource = f"v2/accounts/{account_id}/transactions"
-        uri = self._generate_uri(resource)
-        jwt = self._generate_jwt(uri)
         return self._request_data(resource, jwt)
 
+    def get_transactions(self, coin: str) -> list[dict[str, Any]]:
+        """Every transaction of the coin, across the accounts holding it: staked
+        coins are kept in an account of their own."""
+        transactions = []
+        for account in self._accounts:
+            if account["currency"]["code"] == coin:
+                resource = f"v2/accounts/{account['id']}/transactions"
+                uri = self._generate_uri(resource)
+                transactions += self._request_data(resource, self._generate_jwt(uri))
+
+        return transactions
+
+    @cached_property
+    def _accounts(self) -> list[dict[str, Any]]:
+        return self.get_accounts()
+
     def _generate_uri(self, resource: str, method: str = "GET") -> str:
-        return f"{method} {self.COINBASE_API_URL}/{resource}"
+        return f"{method} {urlparse(self.base_url).netloc}/{resource}"
 
     def _generate_jwt(self, uri: str) -> str:
         private_key = serialization.load_pem_private_key(
@@ -84,7 +94,7 @@ class CoinbaseApi(CoinbasePort):
         return response
 
     def _request_data(self, resource: str, jwt: str) -> list[dict[str, Any]]:
-        url = f"https://{self.COINBASE_API_URL}/{resource}"
+        url = f"{self.base_url}/{resource}"
         headers = {"Authorization": f"Bearer {jwt}"}
 
         response = self._issue_request(url, headers)
@@ -93,20 +103,10 @@ class CoinbaseApi(CoinbasePort):
         pagination = parsed_response.get("pagination")
 
         while pagination.get("next_uri"):
-            url = f"https://{self.COINBASE_API_URL}/{pagination.get('next_uri')}"
+            url = urljoin(self.base_url, pagination.get("next_uri"))
             response = self._issue_request(url, headers)
             parsed_response = response.json()
             data += parsed_response.get("data")
             pagination = parsed_response.get("pagination")
 
         return data
-
-    def _get_account_id(self, coin: str) -> str:
-        try:
-            account = next(
-                filter(lambda x: x["currency"]["code"] == coin, self._accounts)
-            )
-            return account["id"]
-
-        except StopIteration:
-            return ""
