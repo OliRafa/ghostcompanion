@@ -65,16 +65,10 @@ class TestExportPortfolio(ExportPortfolioFactory):
 
     def when_order_already_exists_in_ghostfolio_should_not_insert_it_again(self):
         legacy_portfolio = self.import_transactions.execute()
-        legacy_portfolio = deepcopy(legacy_portfolio)
-        trades = legacy_portfolio.get_trades("STOCKA")
-        for trade in trades:
-            trade.description = "older_trade"
-
-        dividends = legacy_portfolio.get_dividends("STOCKA")
-        for dividend in dividends:
-            dividend.description = "older_trade"
-
         self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
+        exported = self.ghostfolio_adapter.get_orders_by_symbol(
+            legacy_portfolio.account.id, "STOCKA"
+        )
 
         portfolio = self.import_transactions.execute()
         self.export_portfolio.execute(portfolio)
@@ -82,7 +76,34 @@ class TestExportPortfolio(ExportPortfolioFactory):
         orders = self.ghostfolio_adapter.get_orders_by_symbol(
             portfolio.account.id, "STOCKA"
         )
-        assert all(order.description == "older_trade" for order in orders)
+        assert [x.id for x in orders] == [x.id for x in exported]
+
+    def when_order_was_relabelled_should_replace_it(self):
+        legacy_portfolio = self.import_transactions.execute()
+        legacy_portfolio = deepcopy(legacy_portfolio)
+        trades = legacy_portfolio.get_trades("STOCKA")
+        for trade in trades:
+            trade.description = "older_label"
+
+        dividends = legacy_portfolio.get_dividends("STOCKA")
+        for dividend in dividends:
+            dividend.description = "older_label"
+
+        self.ghostfolio_adapter.export_portfolio(legacy_portfolio)
+        exported = len(
+            self.ghostfolio_adapter.get_orders_by_symbol(
+                legacy_portfolio.account.id, "STOCKA"
+            )
+        )
+
+        portfolio = self.import_transactions.execute()
+        self.export_portfolio.execute(portfolio)
+
+        orders = self.ghostfolio_adapter.get_orders_by_symbol(
+            portfolio.account.id, "STOCKA"
+        )
+        assert len(orders) == exported
+        assert all(order.description != "older_label" for order in orders)
 
     def when_ghostfolio_has_trade_and_api_has_not_should_delete_it_from_ghostfolio(
         self,

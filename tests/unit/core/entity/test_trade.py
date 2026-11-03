@@ -254,12 +254,23 @@ class TestEquals:
     def when_compared_with_other_types_should_not_be_equal(self):
         assert build_trade() != "TEST"
 
+    def should_take_description_into_consideration(self):
+        sent = build_trade(description="Sent")
+        transfer = build_trade(description="Transfer to Cold Storage")
+
+        assert sent != transfer
+
+    def when_description_is_empty_or_missing_should_be_equal(self):
+        assert build_trade(description="") == build_trade(description=None)
+
 
 def build_trade(
     transaction_type: TransactionType = TransactionType.BUY,
     unit_price: Decimal = Decimal("0.234"),
+    description: str | None = None,
 ) -> Trade:
     return Trade(
+        description=description,
         executed_at=datetime(2024, 1, 1, 12),
         fee=Decimal("0.21"),
         quantity=Decimal("1.02"),

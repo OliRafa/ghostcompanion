@@ -67,4 +67,7 @@ class Trade(BaseModel):
             and float(self.quantity) == float(other.quantity)
             and float(self.unit_price) == float(other.unit_price)
             and float(self.fee) == float(other.fee)
+            # Ghostfolio's check compares the comment too, an empty one being
+            # none; a relabelled activity has to differ to be rewritten.
+            and (self.description or None) == (other.description or None)
         )
