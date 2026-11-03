@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.4.1](https://github.com/OliRafa/ghostcompanion/compare/v3.4.0...v3.4.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* **ghostfolio:** rewrite activities whose comment changed ([066d5f5](https://github.com/OliRafa/ghostcompanion/commit/066d5f58dbadccd723d09ff182cf4c387d074e3a))
+
 # [3.4.0](https://github.com/OliRafa/ghostcompanion/compare/v3.3.0...v3.4.0) (2026-11-03)
 
 
