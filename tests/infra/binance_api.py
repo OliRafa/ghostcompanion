@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -15,7 +16,8 @@ from tests.resources.binance.api import (
 
 class InMemoryBinanceApi(BinancePort):
     """The account behind `tests/resources/binance/transactions.csv`, unless
-    given another. `scanned` lists the pairs whose trades were asked for."""
+    given another. `scanned` lists the pairs whose trades were asked for, and
+    `converts_since` when Convert orders were last asked for from."""
 
     def __init__(
         self,
@@ -25,6 +27,8 @@ class InMemoryBinanceApi(BinancePort):
         fiat_deposits: list[dict[str, Any]] | None = None,
         fiat_withdrawals: list[dict[str, Any]] | None = None,
         trades: dict[str, list[dict[str, Any]]] | None = None,
+        converts: list[dict[str, Any]] | None = None,
+        dust_conversions: list[dict[str, Any]] | None = None,
     ) -> None:
         self._balances = BALANCES if balances is None else balances
         self._deposits = DEPOSITS if deposits is None else deposits
@@ -34,7 +38,10 @@ class InMemoryBinanceApi(BinancePort):
             FIAT_WITHDRAWALS if fiat_withdrawals is None else fiat_withdrawals
         )
         self._trades = defaultdict(list, trades or {})
+        self._converts = converts or []
+        self._dust_conversions = dust_conversions or []
         self.scanned: list[str] = []
+        self.converts_since: datetime | None = None
 
     def get_balances(self) -> dict[str, Decimal]:
         return dict(self._balances)
@@ -57,3 +64,10 @@ class InMemoryBinanceApi(BinancePort):
     def get_trades(self, symbol: str) -> list[dict[str, Any]]:
         self.scanned.append(symbol)
         return self._trades[symbol]
+
+    def get_converts(self, since: datetime | None) -> list[dict[str, Any]]:
+        self.converts_since = since
+        return self._converts
+
+    def get_dust_conversions(self) -> list[dict[str, Any]]:
+        return self._dust_conversions

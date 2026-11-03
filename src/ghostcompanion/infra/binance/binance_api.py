@@ -9,6 +9,7 @@ from typing import Any
 from binance_common.configuration import ConfigurationRestAPI
 from binance_common.errors import TooManyRequestsError
 from binance_common.models import ApiResponse
+from binance_sdk_convert.convert import Convert
 from binance_sdk_fiat.fiat import Fiat
 from binance_sdk_spot.spot import Spot
 from binance_sdk_wallet.wallet import Wallet
@@ -25,6 +26,9 @@ _HISTORY_WINDOW = timedelta(days=89)
 _HISTORY_PAGE_LIMIT = 1000
 _FIAT_PAGE_ROWS = 500
 _TRADES_PAGE_LIMIT = 1000
+# Convert history is only returned 30 days at a time, in a single page.
+_CONVERT_WINDOW = timedelta(days=29)
+_CONVERT_PAGE_LIMIT = 1000
 # Spot calls may weigh 6000 a minute; pausing short of it leaves room for the
 # next call, which weighs 20 at most.
 _WEIGHT_PAUSE_AT = 5800
@@ -42,6 +46,7 @@ class BinanceApi(BinancePort):
         self._spot = Spot(config_rest_api=configuration).rest_api
         self._wallet = Wallet(config_rest_api=configuration).rest_api
         self._fiat = Fiat(config_rest_api=configuration).rest_api
+        self._convert = Convert(config_rest_api=configuration).rest_api
 
     def get_balances(self) -> dict[str, Decimal]:
         balances: dict[str, Decimal] = defaultdict(Decimal)
@@ -85,6 +90,37 @@ class BinanceApi(BinancePort):
             trades += page
             if len(page) < _TRADES_PAGE_LIMIT:
                 return trades
+
+    def get_converts(self, since: datetime | None) -> list[dict[str, Any]]:
+        converts: list[dict[str, Any]] = []
+        start = since or _LAUNCH
+        now = datetime.now(timezone.utc)
+        while start < now:
+            end = min(start + _CONVERT_WINDOW, now)
+            response = self._call(
+                self._convert.get_convert_trade_history,
+                start_time=_milliseconds(start),
+                end_time=_milliseconds(end),
+                limit=_CONVERT_PAGE_LIMIT,
+            )
+            if response.get("moreData"):
+                logger.warning(
+                    f"Binance has more than {_CONVERT_PAGE_LIMIT} Convert orders"
+                    f" from {start:%Y-%m-%d} to {end:%Y-%m-%d}, and only returns"
+                    f" {_CONVERT_PAGE_LIMIT} of them"
+                )
+            converts += response.get("list") or []
+            start = end + timedelta(milliseconds=1)
+
+        return converts
+
+    def get_dust_conversions(self) -> list[dict[str, Any]]:
+        conversions = self._call(self._wallet.dustlog).get("userAssetDribblets")
+        return [
+            detail
+            for conversion in conversions or []
+            for detail in conversion["userAssetDribbletDetails"]
+        ]
 
     def _read_history(
         self, endpoint: Callable[..., ApiResponse]

@@ -28,10 +28,12 @@ logger = logging.getLogger(__name__)
 _CURRENCY = "USD"
 # DefiLlama prices these at the moment; any other coin only has a daily close.
 _NETWORK_COINS = {"BTC": Network.BITCOIN, "ETH": Network.ETHEREUM}
+_STABLECOINS = frozenset({"FDUSD", "USDC", "USDT"})
 
 _DEPOSIT_DONE = {1, 6}  # credited, withdrawable or not yet
 _WITHDRAWAL_DONE = 6
 _FIAT_ORDER_DONE = "Successful"
+_CONVERT_DONE = "SUCCESS"
 _API_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 _TRADING_FEE_DESCRIPTION = "Trading fee"
@@ -131,30 +133,75 @@ class BinanceProvider:
         return self.records[-1].executed_at if self.records else None
 
     def _exchanges_since_records(self) -> list[BinanceExchange]:
-        """The trades the API has from after the exports end. Only a coin whose
-        balance its records don't explain can have been traded, and so can the
+        """The Convert orders, dust conversions and trades the API has from after
+        the exports end. Only a coin whose balance its records, Convert orders
+        and dust conversions don't explain can have been traded, and so can the
         coins traded for it."""
         expected = self._balances_after_transfers()
+        exchanges = self._converts_since_records()
+        exchanges += self._dust_conversions_since_records()
+        _apply(exchanges, expected)
         changed = _differences(expected, self._balances)
-        if not changed:
-            return []
-
-        logger.info(
-            f"`{self.ACCOUNT_NAME}` balances of {', '.join(changed)} changed since"
-            " its exports: looking for its trades, which can take minutes"
-        )
-        exchanges = self._find_exchanges(set(changed))
-        for exchange in exchanges:
-            expected[exchange.got] += exchange.got_quantity
-            expected[exchange.given] -= exchange.given_quantity
-            for coin, fee in exchange.fees.items():
-                expected[coin] -= fee
+        if changed:
+            logger.info(
+                f"`{self.ACCOUNT_NAME}` balances of {', '.join(changed)} changed"
+                " since its exports: looking for its trades, which can take minutes"
+            )
+            traded = self._find_exchanges(set(changed))
+            _apply(traded, expected)
+            exchanges += traded
 
         for coin, (held, booked) in _differences(expected, self._balances).items():
             logger.warning(
                 f"`{self.ACCOUNT_NAME}` holds {held} {coin}, but its records add up"
-                f" to {booked}: something the importer doesn't read (Earn, Convert,"
-                " dust conversions…) moved it, and the difference isn't booked"
+                f" to {booked}: something the importer doesn't read (Earn,"
+                " margin…) moved it, and the difference isn't booked"
+            )
+
+        return sorted(exchanges, key=lambda x: x.executed_at)
+
+    def _converts_since_records(self) -> list[BinanceExchange]:
+        end = self._records_end
+        converts = [
+            (_from_milliseconds(x["createTime"]), x)
+            for x in self.binance_api.get_converts(end)
+            if x["orderStatus"] == _CONVERT_DONE
+        ]
+        return [
+            BinanceExchange(
+                reference=f"binance-convert-{convert['orderId']}",
+                executed_at=created_at,
+                given=self._rename(convert["fromAsset"]),
+                given_quantity=Decimal(convert["fromAmount"]),
+                got=self._rename(convert["toAsset"]),
+                got_quantity=Decimal(convert["toAmount"]),
+                fees={},
+            )
+            for created_at, convert in converts
+            if _after(created_at, end)
+        ]
+
+    def _dust_conversions_since_records(self) -> list[BinanceExchange]:
+        end = self._records_end
+        exchanges = []
+        for swept in self.binance_api.get_dust_conversions():
+            converted_at = _from_milliseconds(swept["operateTime"])
+            if not _after(converted_at, end):
+                continue
+            # Dust only became BNB until Binance let users pick the coin, and
+            # those older records don't name it.
+            target = self._rename(swept.get("targetAsset") or "BNB")
+            exchanges.append(
+                BinanceExchange(
+                    reference=f"binance-dust-{swept['transId']}-{swept['fromAsset']}",
+                    executed_at=converted_at,
+                    given=self._rename(swept["fromAsset"]),
+                    given_quantity=Decimal(swept["amount"]),
+                    got=target,
+                    got_quantity=Decimal(swept["transferedAmount"]),
+                    # Binance's charge comes out of the amount it transferred.
+                    fees={target: Decimal(swept["serviceChargeAmount"])},
+                )
             )
 
         return exchanges
@@ -292,10 +339,13 @@ class BinanceProvider:
 
     def _adapt_swap(self, exchange: BinanceExchange) -> list[OnChainMovement]:
         # The ledger values a swap by whichever side has a price, so only the
-        # best priced side gets one: a coin DefiLlama prices at the moment over
-        # a daily close.
+        # best priced side gets one: a stablecoin, whose amount is what the swap
+        # was worth, then a coin DefiLlama prices at the moment over a daily
+        # close.
         prices: dict[str, Decimal | None] = {exchange.given: None, exchange.got: None}
-        for coin in sorted(prices, key=lambda x: x not in _NETWORK_COINS):
+        for coin in sorted(
+            prices, key=lambda x: (x not in _STABLECOINS, x not in _NETWORK_COINS)
+        ):
             prices[coin] = self._price(coin, exchange.executed_at)
             if prices[coin] is not None:
                 break
@@ -377,6 +427,14 @@ def _differences(
         for coin in sorted(set(expected) | set(actual))
         if actual.get(coin, Decimal("0")) != expected.get(coin, Decimal("0"))
     }
+
+
+def _apply(exchanges: list[BinanceExchange], balances: defaultdict[str, Decimal]):
+    for exchange in exchanges:
+        balances[exchange.got] += exchange.got_quantity
+        balances[exchange.given] -= exchange.given_quantity
+        for coin, fee in exchange.fees.items():
+            balances[coin] -= fee
 
 
 def _after(moment: datetime, end: datetime | None) -> bool:

@@ -178,8 +178,8 @@ class TestTradesSinceExports(BinanceProviderFactory):
 
         assert self.api.scanned == []
 
-    def when_a_coin_was_traded_since_should_book_its_trades(self):
-        provider = self.provider_with(
+    def provider_having_sold_btc_for_usdt(self) -> BinanceProvider:
+        return self.provider_with(
             balances={
                 **BALANCES,
                 "BTC": Decimal("0.07273187"),
@@ -202,6 +202,9 @@ class TestTradesSinceExports(BinanceProviderFactory):
             },
         )
 
+    def when_a_coin_was_traded_since_should_book_its_trades(self):
+        provider = self.provider_having_sold_btc_for_usdt()
+
         swap = [
             x
             for x in provider.get_movements()
@@ -215,6 +218,20 @@ class TestTradesSinceExports(BinanceProviderFactory):
         ]
         assert [(x.quantity, x.description) for x in fees] == [
             (Decimal("0.0255"), "Trading fee")
+        ]
+
+    def should_value_a_swap_by_its_stablecoin_side_over_bitcoin(self):
+        provider = self.provider_having_sold_btc_for_usdt()
+
+        swap = [
+            x
+            for x in provider.get_movements()
+            if x.transaction_id == "binance-order-9001"
+        ]
+
+        assert [(x.symbol, x.market_unit_price) for x in swap] == [
+            ("BTC", None),
+            ("USDT", Decimal("1.0002")),
         ]
 
     def should_find_trades_through_a_coin_no_longer_held(self):
@@ -302,6 +319,186 @@ class TestTradesSinceExports(BinanceProviderFactory):
         references = {x.transaction_id for x in provider.get_movements()}
 
         assert "binance-order-9004" in references
+
+
+def convert(
+    order_id: int,
+    moment: str,
+    given: tuple[str, str],
+    got: tuple[str, str],
+    status: str = "SUCCESS",
+) -> dict:
+    return {
+        "orderId": order_id,
+        "orderStatus": status,
+        "fromAsset": given[0],
+        "fromAmount": given[1],
+        "toAsset": got[0],
+        "toAmount": got[1],
+        "createTime": milliseconds(moment),
+    }
+
+
+class TestConvertsSinceExports(BinanceProviderFactory):
+    @fixture(autouse=True)
+    def converted_into_usdc(self, initialize_provider):
+        balances = {**BALANCES, "BRL": Decimal("825.37"), "USDC": Decimal("59.87")}
+        del balances["XVG"]
+        self.provider = self.provider_with(
+            balances=balances,
+            converts=[
+                convert(7000, "2022-08-01 12:00:00", ("LTC", "1"), ("USDC", "52")),
+                convert(
+                    7001, "2025-06-14 09:12:05", ("XVG", "11988"), ("USDC", "41.5")
+                ),
+                convert(7002, "2025-06-14 09:15:40", ("BRL", "100"), ("USDC", "18.37")),
+                convert(
+                    7003,
+                    "2025-06-14 09:17:00",
+                    ("BTC", "0.01"),
+                    ("USDC", "650"),
+                    "FAIL",
+                ),
+            ],
+        )
+
+    def should_ask_for_converts_from_where_the_exports_end(self):
+        self.provider.get_trades()
+
+        assert self.api.converts_since == at("2022-09-15 06:30:00")
+
+    def should_swap_coins_converted_into_each_other(self):
+        swap = [
+            x
+            for x in self.provider.get_movements()
+            if x.transaction_id == "binance-convert-7001"
+        ]
+
+        assert [(x.symbol, x.quantity, x.market_unit_price) for x in swap] == [
+            ("XVG", Decimal("-11988"), None),
+            ("USDC", Decimal("41.5"), Decimal("0.9998")),
+        ]
+        assert swap[0].executed_at == at("2025-06-14 09:12:05")
+
+    def should_buy_with_fiat_what_was_converted_from_it(self):
+        [buy] = [x for x in self.provider.get_trades() if x.symbol == "USDC"]
+
+        assert buy.transaction_type == TransactionType.BUY
+        assert buy.currency == "BRL"
+        assert buy.quantity == Decimal("18.37")
+        assert buy.value == Decimal("100")
+
+    def should_skip_converts_that_failed_or_the_exports_have(self):
+        references = {x.transaction_id for x in self.provider.get_movements()}
+
+        assert "binance-convert-7000" not in references
+        assert "binance-convert-7003" not in references
+
+    def when_converts_explain_the_balances_should_not_scan_or_warn(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            self.provider.get_trades()
+
+        assert self.api.scanned == []
+        assert caplog.text == ""
+
+
+def dust(
+    conversion_id: int,
+    moment: str,
+    given: tuple[str, str],
+    transferred: tuple[str, str],
+    charge: str,
+) -> dict:
+    return {
+        "transId": conversion_id,
+        "operateTime": milliseconds(moment),
+        "fromAsset": given[0],
+        "amount": given[1],
+        "targetAsset": transferred[0],
+        "transferedAmount": transferred[1],
+        "serviceChargeAmount": charge,
+    }
+
+
+class TestDustConversionsSinceExports(BinanceProviderFactory):
+    @fixture(autouse=True)
+    def swept_into_usdc(self, initialize_provider):
+        legacy = dust(8002, "2025-07-01 00:00:00", ("XNO", "0.5"), ("", "0.0012"), "0")
+        del legacy["targetAsset"]
+        self.provider = self.provider_with(
+            balances={
+                **BALANCES,
+                "BNB": Decimal("0.0012"),
+                "BTC": Decimal("0.07372187"),
+                "LTC": Decimal("0.218"),
+                "USDC": Decimal("0.80458"),
+                "XNO": Decimal("39.5"),
+            },
+            dust_conversions=[
+                dust(8000, "2022-01-10 00:00:00", ("XLM", "1"), ("BNB", "0.0004"), "0"),
+                dust(
+                    8001,
+                    "2025-06-20 14:00:00",
+                    ("BTC", "0.00001"),
+                    ("USDC", "0.8"),
+                    "0.016",
+                ),
+                dust(
+                    8001,
+                    "2025-06-20 14:00:00",
+                    ("LTC", "0.0003"),
+                    ("USDC", "0.021"),
+                    "0.00042",
+                ),
+                legacy,
+            ],
+        )
+
+    def should_swap_each_coin_swept_for_the_coin_it_became(self):
+        movements = [
+            (x.transaction_id, x.symbol, x.quantity, x.market_unit_price)
+            for x in self.provider.get_movements()
+            if x.transaction_id.startswith("binance-dust-8001")
+        ]
+
+        assert movements == [
+            ("binance-dust-8001-btc", "BTC", Decimal("-0.00001"), None),
+            ("binance-dust-8001-btc", "USDC", Decimal("0.8"), Decimal("0.9998")),
+            ("binance-dust-8001-ltc", "LTC", Decimal("-0.0003"), None),
+            ("binance-dust-8001-ltc", "USDC", Decimal("0.021"), Decimal("0.9998")),
+        ]
+
+    def should_sell_the_charge_out_of_what_was_transferred_for_nothing(self):
+        charges = [
+            (x.symbol, x.quantity)
+            for x in self.provider.get_trades()
+            if x.description == "Trading fee" and x.executed_at.year == 2025
+        ]
+
+        assert charges == [("USDC", Decimal("0.016")), ("USDC", Decimal("0.00042"))]
+
+    def when_record_names_no_target_should_have_become_bnb(self):
+        movements = [
+            (x.symbol, x.quantity)
+            for x in self.provider.get_movements()
+            if x.transaction_id == "binance-dust-8002-xno"
+        ]
+
+        assert movements == [("XNO", Decimal("-0.5")), ("BNB", Decimal("0.0012"))]
+
+    def should_skip_dust_conversions_the_exports_have(self):
+        references = {x.transaction_id for x in self.provider.get_movements()}
+
+        assert "binance-dust-8000-xlm" not in references
+
+    def when_dust_conversions_explain_the_balances_should_not_scan_or_warn(
+        self, caplog
+    ):
+        with caplog.at_level(logging.WARNING):
+            self.provider.get_trades()
+
+        assert self.api.scanned == []
+        assert caplog.text == ""
 
 
 class TestWarnings(BinanceProviderFactory):

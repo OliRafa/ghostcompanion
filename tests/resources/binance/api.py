@@ -166,6 +166,8 @@ PRICE_HISTORIES: dict[str, tuple[str, dict[str, float]]] = {
         },
     ),
     "LTC-USD": ("UTC", {"2019-02-01": 33.21}),
+    "USDC-USD": ("UTC", {"2025-06-01": 0.9998}),
+    "USDT-USD": ("UTC", {"2023-03-01": 1.0002}),
     "XLM-USD": ("UTC", {"2021-07-01": 0.2611}),
     "XNO-USD": ("UTC", {"2019-05-01": 1.327}),
 }

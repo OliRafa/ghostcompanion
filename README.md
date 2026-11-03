@@ -389,7 +389,7 @@ Binance is read from two places:
 * **Its API** (`BINANCE_API_KEY` and `BINANCE_SECRET`, created under
   **Account → API Management** with only **Enable Reading** on): balances, every
   crypto deposit and withdrawal, with the transaction ids that pair them with
-  Coinbase and your wallets, and trades.
+  Coinbase and your wallets, Convert orders, dust conversions, and trades.
 * **Transaction Records exports**, for older trades. Since November 2024
   Binance's API returns no trades from before September 2022
   ([CoinTracking](https://cointracking.freshdesk.com/en/support/solutions/articles/29000039887-binance-import-restrictions)
@@ -417,24 +417,30 @@ How Binance is booked, in its own `Binance` account:
 
 * **Trades against fiat** (BRL, EUR…) are buys and sells in that fiat, with a
   fee in it as the trade's fee.
-* **A coin traded for another**, stablecoins included, is a swap, valued at
-  BTC's or ETH's price at the moment when one of them is a side, or else at the
-  coin given's daily close.
+* **A coin traded for another**, stablecoins included, is a swap. It's valued
+  by its stablecoin side (USDC, USDT or FDUSD) when it has one, as that amount
+  is what the swap was worth; else at BTC's or ETH's price at the moment when
+  one of them is a side, or else at the coin given's daily close.
 * **A fee paid in a coin** (BNB, or the coin bought) is that coin sold for
   nothing, a second after the trade.
+* **A dust conversion** (small balances converted to BNB or USDC) swaps each
+  coin swept for what it became, and sells Binance's charge for nothing, as a
+  fee paid in a coin.
 * **Airdrops** are bought for nothing, and **a coin Binance renamed** (NANO to
   XNO) is booked under its new name throughout.
 * **Deposits and withdrawals** come from the API and are booked like Coinbase's
   sends and receives, transfers to and from your other accounts included (see
   [Self-Custody Wallets](#self-custody-wallets)).
 
-Trades made after the exports end come from the API. Finding them means asking
-about every pair a coin could have been traded in, which takes minutes, so it's
-only done when today's balances differ from what the exports and the API's
-deposits and withdrawals since add up to. Whatever still doesn't add up is
-logged as a warning naming the coin and the difference: the importer doesn't
-read Earn, Convert or dust conversions from the API, nor margin, futures, P2P
-or card buys. Export records it doesn't book are warned about the same way.
+Convert orders, dust conversions and trades made after the exports end come from
+the API, and are booked by the rules above (converting BRL to USDC buys USDC in
+BRL). Finding trades means asking about every pair a coin could have been traded
+in, which takes minutes, so it's only done when today's balances differ from
+what the exports and the API's deposits, withdrawals, Convert orders and dust
+conversions since add up to. Whatever still doesn't add up is logged as a
+warning naming the coin and the difference: the importer doesn't read Earn from
+the API, nor margin, futures, P2P or card buys. Export records it doesn't book
+are warned about the same way.
 
 Fiat left on Binance becomes the account's cash balance only in the account's
 currency (USD unless you change it in Ghostfolio). On a self-hosted Ghostfolio,
@@ -483,7 +489,9 @@ with new transactions.
   * [x] Deposits and withdrawals, transfers with your other accounts included
   * [x] Airdrops and coin renames
   * [x] Account balance
-  * [ ] Convert, Earn and dust conversions after the exports
+  * [x] Convert orders after the exports
+  * [x] Dust conversions after the exports
+  * [ ] Earn after the exports
 * [-] Coinbase
   * [x] Crypto buys and sells
   * [x] Crypto transaction fees

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -39,4 +40,16 @@ class BinancePort(ABC):
     def get_trades(self, symbol: str) -> list[dict[str, Any]]:
         """The account's trades on `symbol` that the API still returns, which
         are none from before September 2022."""
+        ...
+
+    @abstractmethod
+    def get_converts(self, since: datetime | None) -> list[dict[str, Any]]:
+        """Every Convert order placed since `since`, or ever if None, whatever
+        its status."""
+        ...
+
+    @abstractmethod
+    def get_dust_conversions(self) -> list[dict[str, Any]]:
+        """Each coin swept by the last 100 dust conversions, none from before
+        December 2020: a record per coin, carrying its conversion's id."""
         ...
