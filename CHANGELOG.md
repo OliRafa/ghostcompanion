@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+# [3.4.0](https://github.com/OliRafa/ghostcompanion/compare/v3.3.0...v3.4.0) (2026-11-03)
+
+
+### Features
+
+* **binance:** book Convert orders and dust conversions made after the exports ([eef0ce8](https://github.com/OliRafa/ghostcompanion/commit/eef0ce874c8848a14357a4815f63825e0b9bda3e))
+* **coinbase:** import Advanced Trade fills ([8a72df3](https://github.com/OliRafa/ghostcompanion/commit/8a72df335b98cb6a53f4fbf6490e9892ab867526))
+
 # [3.3.0](https://github.com/OliRafa/ghostcompanion/compare/v3.2.0...v3.3.0) (2026-10-30)
 
 
